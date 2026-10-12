@@ -1,0 +1,10 @@
+# Static site: no build step, serve the repo root.
+[build]
+  publish = "."
+  command = ""
+
+# Anything that isn't a real file falls back to the theme options page.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
