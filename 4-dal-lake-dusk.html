@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYLIN — Dal Lake Dusk</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&family=Jost:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root { --silver:#d5dae3; --teal:#4fb3b0; }
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; }
+  body { color:var(--silver); font-family:'Jost',sans-serif; font-weight:300; overflow-x:hidden; text-align:center;
+         background:linear-gradient(180deg,#060b1d 0%,#0e1b3d 38%,#1b3a5c 62%,#16444f 78%,#0a1c26 100%);
+         display:flex; flex-direction:column; position:relative; }
+  .mtn { position:fixed; left:0; right:0; bottom:22vh; width:100%; height:34vh; }
+  .lake { position:fixed; left:0; right:0; bottom:0; height:22vh; background:linear-gradient(180deg,rgba(79,179,176,.18),rgba(5,12,20,.9)); }
+  .lake::before,.lake::after { content:""; position:absolute; left:50%; height:1px; background:rgba(213,218,227,.35); transform:translateX(-50%); animation:ripple 5s ease-in-out infinite; }
+  .lake::before { top:22%; width:30%; } .lake::after { top:46%; width:18%; animation-delay:1.5s; }
+  @keyframes ripple { 50% { width:48%; opacity:.2; } }
+  .moon { position:fixed; top:9vh; right:14vw; width:64px; height:64px; border-radius:50%; box-shadow:inset -14px 0 0 0 #e8ecf3; filter:drop-shadow(0 0 14px rgba(232,236,243,.5)); }
+  main { margin:auto; position:relative; z-index:1; padding:24px; display:flex; flex-direction:column; align-items:center; gap:22px; padding-bottom:12vh; }
+  .logo { width:min(380px,72vw,36vh); animation:fade 2s ease both; }
+  @keyframes fade { from { opacity:0; transform:translateY(14px);} to { opacity:1; } }
+  .tag { font-family:'Cormorant Garamond',serif; font-size:clamp(18px,2.4vw,24px); letter-spacing:.5em; text-transform:uppercase; padding-left:.5em; animation:fade 2s .6s ease both; }
+  p { max-width:420px; font-size:14px; line-height:1.9; letter-spacing:.07em; color:#9fb0c4; animation:fade 2s .9s ease both; }
+  form { display:flex; width:min(400px,88vw); background:rgba(255,255,255,.06); backdrop-filter:blur(8px); border:1px solid rgba(213,218,227,.25); border-radius:40px; overflow:hidden; animation:fade 2s 1.2s ease both; }
+  input { flex:1; background:none; border:0; padding:14px 20px; color:var(--silver); font:inherit; letter-spacing:.08em; outline:none; }
+  input::placeholder { color:#6d7f96; }
+  button { background:var(--teal); color:#04161a; border:0; padding:0 24px; font:inherit; font-size:11px; letter-spacing:.25em; text-transform:uppercase; cursor:pointer; }
+  button:hover { background:#6ccbc8; }
+  footer { position:relative; z-index:2; text-align:center; padding:18px 16px; font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:#6d7f96; }
+</style>
+</head>
+<body>
+<div class="moon"></div>
+<svg class="mtn" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0 320V210l120-70 90 60 140-130 130 110 110-70 160 120 150-150 120 100 130-60 140 90 150-80V320z" fill="#0b1830" opacity=".9"/>
+  <path d="M0 320V260l150-60 120 40 170-90 140 80 170-60 160 70 170-100 130 80 130-40 100 40V320z" fill="#08121f"/>
+</svg>
+<div class="lake"></div>
+<main>
+  <img class="logo" src="assets/logo-transparent.png" alt="AYLIN — Kashmir, Reimagined">
+  <div class="tag">Coming Soon</div>
+  <p>From the quiet shores of Dal, a collection of authentic Kashmiri craft — arriving soon.</p>
+  <form onsubmit="event.preventDefault(); this.innerHTML='<span style=&quot;padding:14px 20px&quot;>Thank you — see you at dusk.</span>'">
+    <input type="email" placeholder="Email address" required aria-label="Email">
+    <button>Notify</button>
+  </form>
+</main>
+<footer>@aylin &nbsp;·&nbsp; Kashmir, Reimagined</footer>
+</body>
+</html>

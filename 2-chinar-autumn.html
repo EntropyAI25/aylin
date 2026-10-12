@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYLIN — Chinar Autumn</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&family=Jost:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root { --ember:#c8461f; --rust:#8a2e12; --gold:#d9a15c; --ink:#12100f; --silver:#d0d2d6; }
+  * { box-sizing:border-box; margin:0; }
+  html,body { height:100%; }
+  body { color:var(--silver); font-family:'Jost',sans-serif; font-weight:300; overflow-x:hidden; text-align:center;
+         background: radial-gradient(ellipse at 50% 110%, #5a1d0b 0%, #261008 38%, var(--ink) 75%);
+         display:flex; flex-direction:column; }
+  .leaf { position:fixed; top:-60px; width:22px; height:22px; background:linear-gradient(135deg,var(--ember),var(--rust));
+          clip-path:polygon(50% 0%,62% 22%,90% 14%,76% 42%,100% 52%,70% 64%,78% 92%,52% 76%,50% 100%,46% 76%,22% 92%,30% 64%,0 52%,24% 42%,10% 14%,38% 22%);
+          opacity:.75; animation:fall linear infinite; }
+  @keyframes fall { to { transform:translate3d(var(--dx),115vh,0) rotate(var(--rot)); } }
+  main { margin:auto; position:relative; z-index:1; padding:24px; display:flex; flex-direction:column; align-items:center; gap:26px; }
+  .logo { width:min(400px,76vw,36vh); animation:fade 2s ease both; }
+  @keyframes fade { from { opacity:0; transform:translateY(14px);} to { opacity:1; } }
+  h1 { font-family:'Cormorant Garamond',serif; font-weight:300; font-style:italic; font-size:clamp(26px,4vw,44px); color:var(--gold); animation:fade 2s .6s ease both; }
+  p { font-size:14px; letter-spacing:.1em; line-height:1.9; max-width:440px; color:#a89d94; animation:fade 2s .9s ease both; }
+  .tag { font-size:12px; letter-spacing:.5em; text-transform:uppercase; color:var(--ember); }
+  form { display:flex; gap:10px; width:min(440px,88vw); animation:fade 2s 1.2s ease both; }
+  input { flex:1; background:rgba(255,255,255,.04); border:1px solid #4a3a32; color:var(--silver); padding:14px 16px; font:inherit; letter-spacing:.08em; outline:none; }
+  input:focus { border-color:var(--ember); }
+  button { background:var(--ember); border:0; color:#fff; padding:0 22px; font:inherit; font-size:12px; letter-spacing:.25em; text-transform:uppercase; cursor:pointer; }
+  button:hover { background:#e0562a; }
+  footer { position:relative; z-index:2; text-align:center; padding:18px 16px; font-size:11px; letter-spacing:.3em; color:#6b5a50; text-transform:uppercase; z-index:1; }
+</style>
+</head>
+<body>
+<div id="leaves"></div>
+<main>
+  <img class="logo" src="assets/logo-transparent.png" alt="AYLIN — Kashmir, Reimagined">
+  <div class="tag">Coming Soon</div>
+  <h1>Autumn is gathering in the valley.</h1>
+  <p>Our first collection is being hand-finished by Kashmiri artisans. Be the first to know when it arrives.</p>
+  <form onsubmit="event.preventDefault(); this.innerHTML='<span>Thank you — you are on the list.</span>'">
+    <input type="email" placeholder="Email address" required aria-label="Email">
+    <button>Notify</button>
+  </form>
+</main>
+<footer>@aylin &nbsp;·&nbsp; Kashmir, Reimagined</footer>
+<script>
+const L=document.getElementById('leaves');
+for(let i=0;i<26;i++){const e=document.createElement('i');e.className='leaf';
+ e.style.left=Math.random()*100+'vw';e.style.setProperty('--dx',(Math.random()*160-80)+'px');e.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+ e.style.animationDuration=(9+Math.random()*12)+'s';e.style.animationDelay=(-Math.random()*20)+'s';
+ e.style.transform='scale('+(.5+Math.random()*1.1)+')';e.style.opacity=.35+Math.random()*.5;L.appendChild(e)}
+</script>
+</body>
+</html>
