@@ -4,18 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AYLIN — Coming Soon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&family=Jost:wght@300;400&display=swap" rel="stylesheet">
 <style>
   :root { --bg:#000; --silver:#c9ccd1; --dim:#80848b; }
   * { box-sizing:border-box; margin:0; }
-  html,body { height:100%; }
+  html,body { min-height:100%; }
+  body { min-height:100vh; min-height:100dvh; }
   body { background:var(--bg); color:var(--silver); font-family:'Jost',sans-serif; font-weight:300; overflow-x:hidden;
          display:flex; flex-direction:column; text-align:center; }
-  canvas { position:fixed; inset:0; width:100%; height:100%; }
+  canvas { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
   main { margin:auto; position:relative; z-index:1; padding:24px; display:flex; flex-direction:column; align-items:center; gap:28px; }
-  .logo { width:min(420px,78vw,36vh); animation:rise 2.4s ease both, glow 6s ease-in-out infinite 2.4s; }
-  @keyframes rise { from { opacity:0; transform:translateY(18px) scale(.97); filter:blur(8px);} to { opacity:1; transform:none; filter:none; } }
-  @keyframes glow { 50% { filter:drop-shadow(0 0 28px rgba(200,205,215,.25)); } }
+  .logo { width:min(420px,78vw,36vh); -webkit-animation:rise 2.4s ease both; animation:rise 2.4s ease both; }
+  @keyframes rise { from { opacity:0; -webkit-transform:translateY(18px); transform:translateY(18px); } to { opacity:1; -webkit-transform:none; transform:none; } }
+  @-webkit-keyframes rise { from { opacity:0; -webkit-transform:translateY(18px); } to { opacity:1; -webkit-transform:none; } }
+  
   .soon { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:clamp(18px,2.6vw,26px); letter-spacing:.55em; text-transform:uppercase; padding-left:.55em; animation:rise 2s .8s ease both; }
   .line { width:min(260px,50vw); height:1px; background:linear-gradient(90deg,transparent,var(--silver),transparent); opacity:.5; }
   p { color:var(--dim); font-size:14px; letter-spacing:.08em; max-width:420px; line-height:1.8; animation:rise 2s 1.1s ease both; }
