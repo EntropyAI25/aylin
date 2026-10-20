@@ -64,11 +64,8 @@ const DEFAULT_SETTINGS = {
 };
 
 const SEED_CATEGORIES = [
-  { id: "c1", slug: "kurtas", name: "Kurtas", image: "", sort: 1 },
-  { id: "c2", slug: "shawls", name: "Shawls", image: "", sort: 2 },
-  { id: "c3", slug: "co-ords", name: "Co-ords", image: "", sort: 3 },
-  { id: "c4", slug: "dresses", name: "Dresses", image: "", sort: 4 },
-  { id: "c5", slug: "kaftans", name: "Kaftans", image: "", sort: 5 },
+  { id: "c1", slug: "kaftans", name: "Kaftans", image: "", sort: 1 },
+  { id: "c2", slug: "kurtis", name: "Kurtis", image: "", sort: 2 },
 ];
 
 const colours = {
@@ -87,8 +84,9 @@ const SIZES = ["XS", "S", "M", "L", "XL"];
 const SEED_PRODUCTS = [
   {
     name: "Kaftan",
-    cat: "c5",
-    price: null, // add the price, e.g. price: 2999
+    cat: "c1",
+    price: 2499,
+    sizes: ["40", "44"],
     c: ["maroon", "yellow", "white"],
     feat: true,
     description: "A relaxed, flowing kaftan with Kashmiri embroidery along the neckline and hem.",

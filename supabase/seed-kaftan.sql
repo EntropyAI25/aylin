@@ -4,17 +4,17 @@
 -- 1. Storage → media bucket → create a folder "kaftan" and upload the 9 photos from the repo's
 --    assets/kaftan/ folder (maroon-front.jpg, maroon-side.jpg, ... white-back.jpg).
 -- 2. Replace YOUR-PROJECT below with your project reference (the xxxx in https://xxxx.supabase.co).
--- 3. Set the price (and edit the description / details) here or later in /admin.
+-- 3. Edit the description / details here or later in /admin.
 
-insert into categories (slug, name, sort) values ('kaftans', 'Kaftans', 5) on conflict (slug) do nothing;
+insert into categories (slug, name, sort) values ('kaftans', 'Kaftans', 1), ('kurtis', 'Kurtis', 2) on conflict (slug) do nothing;
 
 insert into products (slug, name, category_id, price, description, details, sizes, colors, featured)
 select
   'kaftan', 'Kaftan', c.id,
-  0, -- price: set it, e.g. 2999 (0 hides the price on the site)
+  2499,
   'A relaxed, flowing kaftan with Kashmiri embroidery along the neckline and hem.',
   '',
-  array['XS','S','M','L','XL'],
+  array['40','44'],
   jsonb_build_array(
     jsonb_build_object('name','Maroon','hex','#8f1d22','images', jsonb_build_array(
       'https://YOUR-PROJECT.supabase.co/storage/v1/object/public/media/kaftan/maroon-front.jpg',
