@@ -34,6 +34,7 @@ const SECTIONS = {
 const get = (o, p) => p.split(".").reduce((a, k) => a?.[k], o);
 function set(o, p, v) { const ks = p.split("."); const l = ks.pop(); ks.reduce((a, k) => (a[k] ??= {}), o)[l] = v; }
 
+const ADMIN_EMAIL = "admin@theaylinlabel.in", PASSKEY_PREFIX = "aylin-";
 let sb, cats = [], products = [], settings, tab = "products", editing = null;
 
 /* ---------- Auth ---------- */
@@ -50,14 +51,13 @@ async function boot() {
 
 function loginView() {
   root.innerHTML = `<div class="login"><form class="box" id="f"><h1>AYLIN Admin</h1>
-    <label>Email<input type="email" name="email" required autocomplete="username"></label>
-    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
-    <button class="btn">Sign in</button></form></div>`;
+    <label>Passkey<input type="password" name="passkey" required autofocus autocomplete="off" inputmode="numeric"></label>
+    <button class="btn">Enter</button></form></div>`;
   $("#f").onsubmit = async (e) => {
     e.preventDefault();
-    const f = new FormData(e.target);
-    const { error } = await sb.auth.signInWithPassword({ email: f.get("email"), password: f.get("password") });
-    error ? toast(error.message, true) : loadAll();
+    // One shared admin account (see supabase/admin-passkey.sql); Supabase needs 6+ characters, hence the prefix.
+    const { error } = await sb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: PASSKEY_PREFIX + new FormData(e.target).get("passkey").trim() });
+    error ? toast(error.message.includes("Invalid login") ? "Wrong passkey." : error.message, true) : loadAll();
   };
 }
 

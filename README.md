@@ -9,7 +9,7 @@ Static site (no build step) + Supabase for products, content, images and admin l
 ## Connect Supabase (one-time, ~5 minutes)
 1. Create a free project at supabase.com.
 2. SQL Editor → paste `supabase/schema.sql`, **change `you@example.com` to your admin email**, Run.
-3. Authentication → Users → Add user (that same email + a strong password, tick "auto confirm").
+3. Run `supabase/admin-passkey.sql` and follow the comments in it (creates the one admin user; the admin login is a single passkey).
 4. Authentication → Sign In / Providers → turn **off** "Allow new users to sign up".
 5. Project Settings → API → copy **Project URL** and **anon public key** into `js/config.js`.
 6. Open `/admin`, sign in, add categories and products.
