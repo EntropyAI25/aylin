@@ -5,7 +5,7 @@ const DEFAULT_SETTINGS = {
   site: {
     name: "AYLIN",
     tagline: "Kashmir, Reimagined",
-    theme: "luxe", // luxe | midnight
+    theme: "auto", // auto | luxe | midnight
     logo: "assets/logo-transparent.png",
     currency: "₹",
   },

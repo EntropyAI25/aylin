@@ -20,11 +20,21 @@ const abs = (u) => (/^(https?:|\/|data:)/.test(u) ? u : "/" + u); // root-relati
 const priceHtml = (p) => (!p.price ? "" : p.sale_price && p.sale_price < p.price ? `<s>${money(p.price)}</s>${money(p.sale_price)}` : money(p.price));
 const img = (p, i = 0) => p.images?.[i] || (i === 0 && p.colors?.find((c) => c.images?.length)?.images[0]) || placeholder(p.name);
 
+// "auto" follows the phone/browser setting: dark -> midnight, light -> luxe.
 function applyTheme() {
   const q = params.get("theme");
   if (q === "luxe" || q === "midnight") sessionStorage.setItem("aylin-theme", q);
-  const t = sessionStorage.getItem("aylin-theme") || S.site.theme || "luxe";
-  document.documentElement.dataset.theme = t === "midnight" ? "midnight" : "luxe";
+  else if (q === "auto") sessionStorage.removeItem("aylin-theme");
+  try { localStorage.setItem("aylin-site-theme", S.site.theme || "auto"); } catch (e) {}
+  const dark = matchMedia("(prefers-color-scheme: dark)");
+  const set = () => {
+    const t = sessionStorage.getItem("aylin-theme") || S.site.theme || "auto";
+    document.documentElement.dataset.theme = t === "auto" ? (dark.matches ? "midnight" : "luxe") : t === "midnight" ? "midnight" : "luxe";
+    document.querySelectorAll("#tt button").forEach((b) => b.classList.toggle("on", b.dataset.t === (sessionStorage.getItem("aylin-theme") || "auto")));
+  };
+  dark.addEventListener("change", set);
+  window.applyThemeNow = set;
+  set();
 }
 
 function layout(cats) {
@@ -62,16 +72,15 @@ function layout(cats) {
       <p class="legal">${esc(S.footer.text)}</p>
     </div></footer>
     <a class="fab" href="${general}" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">${waIcon}</a>
-    ${CONFIG.SHOW_THEME_TOGGLE ? `<div class="theme-toggle" id="tt"><button data-t="luxe">Luxe</button><button data-t="midnight">Midnight</button></div>` : ""}`;
+    ${CONFIG.SHOW_THEME_TOGGLE ? `<div class="theme-toggle" id="tt"><button data-t="auto">Auto</button><button data-t="luxe">Luxe</button><button data-t="midnight">Midnight</button></div>` : ""}`;
 
   $("#top").innerHTML = header;
   $("#bottom").innerHTML = footer;
   $("#burger").onclick = () => $("#menu").classList.toggle("open");
   const tt = $("#tt");
   if (tt) {
-    const sync = () => tt.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === document.documentElement.dataset.theme));
-    tt.onclick = (e) => { const t = e.target.dataset.t; if (t) { sessionStorage.setItem("aylin-theme", t); document.documentElement.dataset.theme = t; sync(); } };
-    sync();
+    tt.onclick = (e) => { const t = e.target.dataset.t; if (!t) return; if (t === "auto") sessionStorage.removeItem("aylin-theme"); else sessionStorage.setItem("aylin-theme", t); window.applyThemeNow(); };
+    window.applyThemeNow();
   }
 }
 

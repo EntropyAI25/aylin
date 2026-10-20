@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Jost:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/styles.css">
-<script>try{var t=new URLSearchParams(location.search).get('theme')||sessionStorage.getItem('aylin-theme');if(t==='midnight'||t==='luxe')document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>try{var t=new URLSearchParams(location.search).get('theme')||sessionStorage.getItem('aylin-theme')||localStorage.getItem('aylin-site-theme')||'auto';if(t!=='midnight'&&t!=='luxe')t=matchMedia('(prefers-color-scheme: dark)').matches?'midnight':'luxe';document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body data-page="shop">
 <div id="top"></div>
