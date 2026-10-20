@@ -99,10 +99,6 @@ function home(cats, products) {
       <a class="btn" href="${esc(h.ctaLink)}">${esc(h.ctaText)}</a>
     </div>
   </section>
-  ${cats.length ? `<section class="section"><div class="wrap">
-    <div class="section-head"><span class="eyebrow">Browse</span><h2>Shop by category</h2></div>
-    <div class="cats">${cats.map((c) => `<a class="cat" href="shop.html?cat=${esc(c.slug)}"><img loading="lazy" src="${esc(c.image || placeholder(c.name))}" alt=""><span>${esc(c.name)}</span></a>`).join("")}</div>
-  </div></section>` : ""}
   <section class="section alt"><div class="wrap">
     <div class="section-head"><span class="eyebrow">Featured</span><h2>Just for you</h2></div>
     ${shown.length ? `<div class="grid">${shown.map(card).join("")}</div>` : `<p class="empty">New pieces arriving soon.</p>`}
