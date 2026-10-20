@@ -162,8 +162,8 @@ select.sort { background: var(--card); color: var(--ink); border: 1px solid var(
 
 /* Footer */
 footer.site { border-top: 1px solid var(--line); padding: 56px 0 28px; background: var(--bg-alt); }
-.foot { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; }
-@media (max-width: 800px) { .foot { grid-template-columns: 1fr; } }
+.foot { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 32px; }
+@media (max-width: 800px) { .foot { flex-direction: column; } }
 .foot h4 { font-weight: 400; letter-spacing: .25em; text-transform: uppercase; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
 .foot ul { list-style: none; padding: 0; display: grid; gap: 8px; }
 .foot .logo { width: 150px; margin-bottom: 8px; }

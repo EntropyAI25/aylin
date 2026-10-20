@@ -118,27 +118,10 @@ function home(cats, products) {
 }
 
 function shop(cats, products) {
-  let cat = params.get("cat") || "all";
-  let sort = "new";
   $("#app").innerHTML = `<div class="wrap">
     <div class="page-head"><span class="eyebrow">The collection</span><h1>Shop</h1></div>
-    <div class="toolbar">
-      <div class="chips" id="chips"></div>
-      <select class="sort" id="sort" aria-label="Sort"><option value="new">Newest</option><option value="lh">Price: low to high</option><option value="hl">Price: high to low</option></select>
-    </div>
-    <div id="list"></div><div style="height:80px"></div></div>`;
-  const draw = () => {
-    $("#chips").innerHTML = [{ slug: "all", name: "All" }, ...cats].map((c) => `<button class="chip ${c.slug === cat ? "on" : ""}" data-c="${esc(c.slug)}">${esc(c.name)}</button>`).join("");
-    const cid = cats.find((c) => c.slug === cat)?.id;
-    let list = products.filter((p) => cat === "all" || p.category_id === cid);
-    const eff = (p) => (p.sale_price && p.sale_price < p.price ? p.sale_price : p.price);
-    if (sort === "lh") list = [...list].sort((a, b) => eff(a) - eff(b));
-    if (sort === "hl") list = [...list].sort((a, b) => eff(b) - eff(a));
-    $("#list").innerHTML = list.length ? `<div class="grid">${list.map(card).join("")}</div>` : `<p class="empty">Nothing here yet. Check back soon.</p>`;
-  };
-  $("#chips").onclick = (e) => { if (e.target.dataset.c) { cat = e.target.dataset.c; history.replaceState(null, "", cat === "all" ? "shop.html" : `shop.html?cat=${cat}`); draw(); } };
-  $("#sort").onchange = (e) => { sort = e.target.value; draw(); };
-  draw();
+    ${products.length ? `<div class="grid">${products.map(card).join("")}</div>` : `<p class="empty">Nothing here yet. Check back soon.</p>`}
+    <div style="height:80px"></div></div>`;
   document.title = `Shop · ${S.site.name}`;
 }
 
