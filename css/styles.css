@@ -9,10 +9,10 @@
   --logo-filter: none;
 }
 [data-theme="midnight"] {
-  --bg: #07080c; --bg-alt: #0e1017; --card: #12141d;
-  --ink: #e8eaee; --muted: #8b909a; --line: #232634;
+  --bg: #000; --bg-alt: #07080b; --card: #0b0c11;
+  --ink: #e8eaee; --muted: #80848b; --line: #1c1e27;
   --accent: #c9ccd1; --accent-ink: #07080c; --silver: #c9ccd1;
-  --hero-a: #161a3a; --hero-b: #07080c;
+  --hero-a: #0d1020; --hero-b: #000;
   --announce-bg: #181b27; --announce-ink: #e8eaee;
   --shadow: 0 10px 30px rgba(0,0,0,.5);
 }
@@ -36,6 +36,15 @@ h3 { font-size: 22px; }
 .section.alt { background: var(--bg-alt); }
 .section-head { text-align: center; margin-bottom: 40px; display: grid; gap: 10px; }
 .center { text-align: center; }
+
+/* Silver divider and starfield, carried over from the coming-soon page */
+.section-head::after, .page-head::after { content: ""; justify-self: center; width: min(260px, 50vw); height: 1px; margin-top: 10px; background: linear-gradient(90deg, transparent, var(--silver), transparent); opacity: .5; }
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: none; }
+[data-theme="midnight"] #sky { display: block; }
+main, footer.site { position: relative; z-index: 1; }
+[data-theme="midnight"] .hero:not(.has-img), [data-theme="midnight"] .section.alt, [data-theme="midnight"] footer.site { background-color: transparent; }
+[data-theme="midnight"] .hero:not(.has-img) { background: radial-gradient(120% 90% at 20% 10%, var(--hero-a), transparent 60%); }
+[data-theme="midnight"] .brand, [data-theme="midnight"] .hero h1 { font-weight: 300; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
@@ -83,7 +92,7 @@ header.site {
 .hero.has-img { color: #fff; background-size: cover; background-position: center; }
 .hero.has-img::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,10,14,.35), rgba(20,10,14,.55)); }
 .hero-in { position: relative; display: grid; gap: 22px; justify-items: center; padding: 60px 0; max-width: 780px; }
-.hero .eyebrow { color: inherit; opacity: .8; }
+.hero .eyebrow { color: inherit; opacity: .8; letter-spacing: .55em; padding-left: .55em; }
 .hero p { font-size: clamp(16px, 2vw, 20px); color: inherit; opacity: .85; max-width: 520px; }
 .hero-mark { width: 110px; opacity: .9; }
 [data-theme="luxe"] .hero:not(.has-img) .hero-mark { filter: brightness(.55) saturate(.8); }
