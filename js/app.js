@@ -50,7 +50,6 @@ function layout(cats) {
     <footer class="site"><div class="wrap">
       <div class="foot">
         <div><img class="logo" src="${esc(S.site.logo)}" alt="${esc(S.site.name)}"><p style="color:var(--muted)">${esc(S.site.tagline)}</p></div>
-        <div><h4>Shop</h4><ul>${cats.map((c) => `<li><a href="shop.html?cat=${esc(c.slug)}">${esc(c.name)}</a></li>`).join("")}</ul></div>
         <div><h4>Help</h4><ul>
           <li><a href="policies.html?p=shipping">Shipping</a></li>
           <li><a href="policies.html?p=returns">Returns &amp; exchanges</a></li>
@@ -109,8 +108,7 @@ function home(cats, products) {
     ${shown.length ? `<div class="grid">${shown.map(card).join("")}</div>` : `<p class="empty">New pieces arriving soon.</p>`}
     <p class="center" style="margin-top:40px"><a class="btn ghost" href="shop.html">View all</a></p>
   </div></section>
-  <section class="section"><div class="wrap split">
-    <div class="pic"><img src="${esc(S.story.image || placeholder("story"))}" alt=""></div>
+  <section class="section"><div class="wrap split solo">
     <div class="txt"><span class="eyebrow">${esc(S.site.tagline)}</span><h2>${esc(S.story.title)}</h2><p>${esc(S.story.text)}</p><a class="btn ghost" href="about.html">Read more</a></div>
   </div></section>
   <section class="section alt"><div class="wrap values">
@@ -202,8 +200,7 @@ async function product(cats) {
 
 function about() {
   $("#app").innerHTML = `<div class="wrap section">
-    <div class="split">
-      <div class="pic"><img src="${esc(S.about.image || placeholder("about"))}" alt=""></div>
+    <div class="split solo">
       <div class="txt"><span class="eyebrow">Our story</span><h1 style="color:var(--ink);font-size:clamp(32px,4.5vw,54px)">${esc(S.about.title)}</h1>${paras(S.about.body)}</div>
     </div></div>`;
   document.title = `Our story · ${S.site.name}`;
@@ -214,9 +211,9 @@ function contact() {
   $("#app").innerHTML = `<div class="wrap section">
     <div class="section-head"><span class="eyebrow">We'd love to hear from you</span><h1>Contact</h1></div>
     <div class="contact-grid">
-      <div><h3>WhatsApp</h3><a href="${waLink(S.whatsapp.generalMessage)}" target="_blank" rel="noopener">${esc(S.whatsapp.number)}</a><p>${esc(c.hours)}</p></div>
+      <div><h3>WhatsApp</h3><a href="${waLink(S.whatsapp.generalMessage)}" target="_blank" rel="noopener">${esc(S.whatsapp.number)}</a></div>
       <div><h3>Instagram</h3><a href="${esc(S.social.instagram)}" target="_blank" rel="noopener">@theaylinlabel</a></div>
-      <div><h3>Studio</h3><p>${esc(c.address)}</p>${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ""}</div>
+      ${c.email ? `<div><h3>Email</h3><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></div>` : ""}
     </div>
     <p class="center" style="margin-top:36px"><a class="btn wa" href="${waLink(S.whatsapp.generalMessage)}" target="_blank" rel="noopener">Chat on WhatsApp</a></p></div>`;
   document.title = `Contact · ${S.site.name}`;

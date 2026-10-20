@@ -80,14 +80,7 @@ const colours = {
 const SIZES = ["XS", "S", "M", "L", "XL"];
 
 const SEED_PRODUCTS = [
-  { name: "Chinar Embroidered Kurta", cat: "c1", price: 3200, sale: 0, c: ["ivory", "rose"], feat: true },
-  { name: "Dal Lake Pashmina Shawl", cat: "c2", price: 6800, sale: 5900, c: ["ivory", "night"], feat: true, sizes: [] },
-  { name: "Saffron Linen Co-ord", cat: "c3", price: 4400, sale: 0, c: ["saffron", "sage"], feat: true },
-  { name: "Crescent Midi Dress", cat: "c4", price: 3900, sale: 0, c: ["night", "rose"], feat: true },
-  { name: "Mughal Garden Kurta", cat: "c1", price: 2900, sale: 2500, c: ["sage"], feat: false },
-  { name: "Kani Weave Stole", cat: "c2", price: 4200, sale: 0, c: ["rose", "ivory"], feat: false, sizes: [] },
-  { name: "Aari Work Co-ord Set", cat: "c3", price: 5100, sale: 0, c: ["night"], feat: false },
-  { name: "Gulmarg Wrap Dress", cat: "c4", price: 3600, sale: 0, c: ["ivory", "sage"], feat: false },
+  // Add real products from the admin.
 ].map((p, i) => ({
   id: "p" + (i + 1),
   slug: p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
