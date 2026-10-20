@@ -16,6 +16,8 @@ function placeholder(seedText = "") {
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 400'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${a}'/><stop offset='1' stop-color='${b}'/></linearGradient></defs><rect width='300' height='400' fill='url(#g)'/><path d='M168 120a62 62 0 1 0 0 120a50 50 0 1 1 0-120z' fill='#ffffff' opacity='.55'/></svg>`;
   return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
 }
+const abs = (u) => (/^(https?:|\/|data:)/.test(u) ? u : "/" + u); // root-relative, so it works on /product/... too
+const priceHtml = (p) => (!p.price ? "" : p.sale_price && p.sale_price < p.price ? `<s>${money(p.price)}</s>${money(p.sale_price)}` : money(p.price));
 const img = (p, i = 0) => p.images?.[i] || placeholder(p.name);
 
 function applyTheme() {
@@ -49,7 +51,7 @@ function layout(cats) {
   const footer = `
     <footer class="site"><div class="wrap">
       <div class="foot">
-        <div><img class="logo" src="${esc(S.site.logo)}" alt="${esc(S.site.name)}"><p style="color:var(--muted)">${esc(S.site.tagline)}</p></div>
+        <div><img class="logo" src="${esc(abs(S.site.logo))}" alt="${esc(S.site.name)}"><p style="color:var(--muted)">${esc(S.site.tagline)}</p></div>
         <div><h4>Help</h4><ul>
           <li><a href="/shipping">Shipping</a></li>
           <li><a href="/returns">Returns &amp; exchanges</a></li>
@@ -79,7 +81,7 @@ const card = (p) => {
     <div class="thumb"><img loading="lazy" src="${esc(img(p))}" alt="${esc(p.name)}">
       ${!p.in_stock ? `<span class="badge out">Sold out</span>` : onSale ? `<span class="badge">Sale</span>` : ""}</div>
     <div><h3>${esc(p.name)}</h3>
-      <div class="price">${onSale ? `<s>${money(p.price)}</s>${money(p.sale_price)}` : money(p.price)}</div>
+      <div class="price">${priceHtml(p)}</div>
       ${p.colors.length ? `<div class="swatches">${p.colors.map((c) => `<span class="sw" title="${esc(c.name)}" style="background:${esc(c.hex)}"></span>`).join("")}</div>` : ""}
     </div></a>`;
 };
@@ -92,7 +94,7 @@ function home(cats, products) {
   $("#app").innerHTML = `
   <section class="hero ${h.image ? "has-img" : ""}" ${h.image ? `style="background-image:url('${esc(h.image)}')"` : ""}>
     <div class="wrap hero-in fade">
-      ${h.image ? "" : `<img class="hero-mark" src="${esc(S.site.logo)}" alt="">`}
+      ${h.image ? "" : `<img class="hero-mark" src="${esc(abs(S.site.logo))}" alt="">`}
       <span class="eyebrow">${esc(h.eyebrow)}</span>
       <h1>${esc(h.title)}</h1>
       <p>${esc(h.subtitle)}</p>
@@ -127,18 +129,18 @@ async function product(cats) {
   const cat = cats.find((c) => c.id === p.category_id);
   const onSale = p.sale_price && p.sale_price < p.price;
   const eff = onSale ? p.sale_price : p.price;
-  const n = Math.max(p.images.length, 1);
+  let gal = p.colors.find((c) => c.images?.length)?.images || p.images; // gallery follows the chosen colour
   let cur = 0, size = p.sizes.length ? "" : "n/a", colour = p.colors.length === 1 ? p.colors[0].name : p.colors.length ? "" : "n/a";
 
   $("#app").innerHTML = `<div class="wrap">
     <div class="crumbs"><a href="/shop">Shop</a>${cat ? ` / <a href="/shop?cat=${esc(cat.slug)}">${esc(cat.name)}</a>` : ""}</div>
     <div class="pdp">
-      <div class="gallery"><div class="main"><img id="main" src="${esc(img(p))}" alt="${esc(p.name)}"></div>
-        ${n > 1 ? `<div class="thumbs" id="thumbs">${p.images.map((u, i) => `<button data-i="${i}" class="${i ? "" : "on"}"><img src="${esc(u)}" alt=""></button>`).join("")}</div>` : ""}
+      <div class="gallery"><div class="main"><img id="main" src="${esc(gal[0] || img(p))}" alt="${esc(p.name)}"></div>
+        <div class="thumbs" id="thumbs"></div>
       </div>
       <div class="info">
         <div><h1 style="font-size:clamp(30px,4vw,44px)">${esc(p.name)}</h1></div>
-        <div class="price">${onSale ? `<s>${money(p.price)}</s>${money(p.sale_price)}` : money(p.price)}</div>
+        <div class="price">${priceHtml(p)}</div>
         ${p.description ? `<div class="details">${paras(p.description)}</div>` : ""}
         ${p.colors.length > 1 || (p.colors.length === 1) ? `<div class="opt"><h4>Colour</h4><div class="row" id="colours">${p.colors.map((c) => `<button class="cdot ${p.colors.length === 1 ? "on" : ""}" data-n="${esc(c.name)}"><i style="background:${esc(c.hex)}"></i>${esc(c.name)}</button>`).join("")}</div></div>` : ""}
         ${p.sizes.length ? `<div class="opt"><h4>Size</h4><div class="row" id="sizes">${p.sizes.map((s) => `<button class="size" data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div></div>` : ""}
@@ -151,12 +153,16 @@ async function product(cats) {
   const link = () => new URL(`/product/${encodeURIComponent(p.slug)}`, location.href).href;
   const message = () => S.whatsapp.template
     .replaceAll("{product}", p.name).replaceAll("{size}", size || "-").replaceAll("{colour}", colour || "-")
-    .replaceAll("{price}", money(eff)).replaceAll("{link}", link())
-    .replace(/^.*(Size|Colour): (n\/a|-)\n?/gm, "");
+    .replaceAll("{price}", p.price ? money(eff) : "-").replaceAll("{link}", link())
+    .replace(/^.*(Size|Colour|Price): (n\/a|-)\n?/gm, "");
 
-  $("#thumbs")?.addEventListener("click", (e) => {
+  const drawThumbs = () => {
+    $("#thumbs").innerHTML = gal.length > 1 ? gal.map((u, i) => `<button data-i="${i}" class="${i === cur ? "on" : ""}"><img src="${esc(u)}" alt=""></button>`).join("") : "";
+  };
+  drawThumbs();
+  $("#thumbs").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
-    cur = +b.dataset.i; $("#main").src = img(p, cur);
+    cur = +b.dataset.i; $("#main").src = gal[cur];
     document.querySelectorAll("#thumbs button").forEach((x, i) => x.classList.toggle("on", i === cur));
   });
   $("#sizes")?.addEventListener("click", (e) => {
@@ -165,6 +171,8 @@ async function product(cats) {
   });
   $("#colours")?.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return; colour = b.dataset.n;
+    const imgs = p.colors.find((c) => c.name === colour)?.images;
+    if (imgs?.length) { gal = imgs; cur = 0; $("#main").src = gal[0]; drawThumbs(); }
     document.querySelectorAll("#colours .cdot").forEach((x) => x.classList.toggle("on", x === b));
   });
   $("#order")?.addEventListener("click", () => {

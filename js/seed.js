@@ -68,6 +68,7 @@ const SEED_CATEGORIES = [
   { id: "c2", slug: "shawls", name: "Shawls", image: "", sort: 2 },
   { id: "c3", slug: "co-ords", name: "Co-ords", image: "", sort: 3 },
   { id: "c4", slug: "dresses", name: "Dresses", image: "", sort: 4 },
+  { id: "c5", slug: "kaftans", name: "Kaftans", image: "", sort: 5 },
 ];
 
 const colours = {
@@ -76,11 +77,23 @@ const colours = {
   sage: { name: "Sage", hex: "#a9b79c" },
   night: { name: "Midnight", hex: "#1e2233" },
   saffron: { name: "Saffron", hex: "#d8a24a" },
+  // Colours with their own photos: choosing one on the product page swaps the gallery.
+  maroon: { name: "Maroon", hex: "#8f1d22", images: ["front", "side", "back"].map((v) => `/assets/kaftan/maroon-${v}.jpg`) },
+  yellow: { name: "Yellow", hex: "#f1de6b", images: ["front", "side", "back"].map((v) => `/assets/kaftan/yellow-${v}.jpg`) },
+  white: { name: "White", hex: "#f7f4ee", images: ["front", "side", "back"].map((v) => `/assets/kaftan/white-${v}.jpg`) },
 };
 const SIZES = ["XS", "S", "M", "L", "XL"];
 
 const SEED_PRODUCTS = [
-  // Add real products from the admin.
+  {
+    name: "Kaftan",
+    cat: "c5",
+    price: null, // add the price, e.g. price: 2999
+    c: ["maroon", "yellow", "white"],
+    feat: true,
+    description: "A relaxed, flowing kaftan with Kashmiri embroidery along the neckline and hem.",
+    details: "",
+  },
 ].map((p, i) => ({
   id: "p" + (i + 1),
   slug: p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
@@ -88,10 +101,9 @@ const SEED_PRODUCTS = [
   category_id: p.cat,
   price: p.price,
   sale_price: p.sale || null,
-  description:
-    "A sample product shown in demo mode. Replace it from the admin with your own photos, price and description.",
-  details: "Soft, breathable fabric\nHand-finished detailing\nDry clean recommended",
-  images: [],
+  description: p.description ?? "A sample product shown in demo mode. Replace it from the admin with your own photos, price and description.",
+  details: p.details ?? "Soft, breathable fabric\nHand-finished detailing\nDry clean recommended",
+  images: p.c.flatMap((k) => colours[k].images ?? []),
   sizes: p.sizes ?? SIZES,
   colors: p.c.map((k) => colours[k]),
   in_stock: true,
