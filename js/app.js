@@ -219,7 +219,7 @@ try {
 }
 })();
 
-/* Ambient backdrop from the coming-soon page: silver stars in midnight, drifting rose-gold dust in luxe */
+/* Twinkling starfield for the midnight theme (from the coming-soon page) */
 (function () {
   const c = document.createElement("canvas"); c.id = "sky"; c.setAttribute("aria-hidden", "true");
   document.body.prepend(c);
@@ -228,13 +228,14 @@ try {
   function size() { w = c.width = innerWidth; h = c.height = innerHeight; stars = Array.from({ length: Math.floor(w * h / 9000) }, () => ({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + .2, p: Math.random() * 6.28, s: Math.random() * .02 + .005 })); }
   size(); addEventListener("resize", size);
   (function draw() {
-    const luxe = document.documentElement.dataset.theme !== "midnight";
     x.clearRect(0, 0, w, h);
-    for (const s of stars) {
-      if (!reduce) { s.p += s.s; s.y -= luxe ? .05 : .03; if (s.y < 0) s.y = h; }
-      x.globalAlpha = (luxe ? .15 : .25) + (luxe ? .4 : .55) * Math.abs(Math.sin(s.p));
-      x.fillStyle = luxe ? "#c9949b" : "#dfe3ea";
-      x.beginPath(); x.arc(s.x, s.y, luxe ? s.r * 1.3 : s.r, 0, 6.28); x.fill();
+    if (document.documentElement.dataset.theme === "midnight") {
+      for (const s of stars) {
+        if (!reduce) { s.p += s.s; s.y -= .03; if (s.y < 0) s.y = h; }
+        x.globalAlpha = .25 + .55 * Math.abs(Math.sin(s.p));
+        x.fillStyle = "#dfe3ea";
+        x.beginPath(); x.arc(s.x, s.y, s.r, 0, 6.28); x.fill();
+      }
     }
     requestAnimationFrame(draw);
   })();

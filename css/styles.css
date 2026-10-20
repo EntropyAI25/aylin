@@ -39,7 +39,8 @@ h3 { font-size: 22px; }
 
 /* Silver divider and starfield, carried over from the coming-soon page */
 .section-head::after, .page-head::after { content: ""; justify-self: center; width: min(260px, 50vw); height: 1px; margin-top: 10px; background: linear-gradient(90deg, transparent, var(--silver), transparent); opacity: .5; }
-#sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: none; }
+[data-theme="midnight"] #sky { display: block; }
 main, footer.site { position: relative; z-index: 1; }
 .hero:not(.has-img) { background: radial-gradient(120% 90% at 20% 10%, var(--hero-a), transparent 60%), radial-gradient(100% 80% at 90% 90%, var(--hero-b), transparent 60%); }
 .section.alt { background: color-mix(in srgb, var(--bg-alt) 72%, transparent); }
