@@ -85,7 +85,7 @@ function shell() {
     <div class="spacer"></div><button id="view">View website ↗</button><button id="out">Sign out</button></aside>
     <main id="main"></main></div>`;
   root.querySelector("aside").onclick = (e) => { const t = e.target.dataset.t; if (t) { tab = t; editing = null; shell(); } };
-  $("#view").onclick = () => window.open("../index.html", "_blank");
+  $("#view").onclick = () => window.open("/", "_blank");
   $("#out").onclick = async () => { await sb.auth.signOut(); loginView(); };
   const m = $("#main");
   if (tab === "products") editing ? productForm(m) : productList(m);

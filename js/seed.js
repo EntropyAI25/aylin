@@ -19,7 +19,7 @@ const DEFAULT_SETTINGS = {
     subtitle: "Timeless Kashmiri craft, reimagined for the modern woman.",
     image: "",
     ctaText: "Shop the collection",
-    ctaLink: "shop.html",
+    ctaLink: "/shop",
   },
   values: {
     items: [

@@ -26,15 +26,15 @@ function applyTheme() {
 }
 
 function layout(cats) {
-  const nav = [["shop.html", "Shop"], ["about.html", "Our Story"], ["contact.html", "Contact"]];
-  const here = location.pathname.split("/").pop() || "index.html";
+  const nav = [["/shop", "Shop"], ["/about", "Our Story"], ["/contact", "Contact"]];
+  const here = location.pathname.replace(/\/$/, "").replace(/\.html$/, "") || "/";
   const general = waLink(S.whatsapp.generalMessage);
   const waIcon = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.5c0 2.3.6 4.4 1.7 6.3L3 29l7.4-1.9c1.8 1 3.8 1.500 5.900 1.500 7 0 12.700-5.600 12.700-12.500S23 3 16 3zm0 22.900c-1.900 0-3.700-.5-5.300-1.500l-.4-.2-4.400 1.100 1.200-4.200-.3-.4a10.200 10.200 0 0 1-1.600-5.500C5.200 9.800 10 5.200 16 5.200s10.800 4.600 10.800 10.300S21.900 25.900 16 25.900zm5.900-7.600c-.3-.2-1.900-.9-2.200-1s-.5-.2-.7.200-.8 1-1 1.200-.4.200-.7.100a8.600 8.600 0 0 1-4.300-3.700c-.3-.6.300-.6.900-1.800.1-.2 0-.4 0-.5s-.7-1.700-1-2.300c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.100-.8.400s-1 1-1 2.500 1.100 2.900 1.200 3.100c.2.200 2.100 3.300 5.200 4.500 1.900.8 2.700.9 3.600.7.600-.1 1.900-.8 2.200-1.500.3-.7.300-1.400.2-1.500s-.3-.2-.6-.4z"/></svg>`;
 
   const header = `
     ${S.announcement.enabled && S.announcement.text ? `<div class="announce">${esc(S.announcement.text)}</div>` : ""}
     <header class="site"><div class="wrap nav">
-      <a class="brand" href="index.html" aria-label="${esc(S.site.name)} home">${esc(S.site.name)}</a>
+      <a class="brand" href="/" aria-label="${esc(S.site.name)} home">${esc(S.site.name)}</a>
       <nav class="menu" id="menu">
         ${nav.map(([h, l]) => `<a href="${h}" class="${here === h ? "on" : ""}">${l}</a>`).join("")}
       </nav>
@@ -51,10 +51,10 @@ function layout(cats) {
       <div class="foot">
         <div><img class="logo" src="${esc(S.site.logo)}" alt="${esc(S.site.name)}"><p style="color:var(--muted)">${esc(S.site.tagline)}</p></div>
         <div><h4>Help</h4><ul>
-          <li><a href="policies.html?p=shipping">Shipping</a></li>
-          <li><a href="policies.html?p=returns">Returns &amp; exchanges</a></li>
-          <li><a href="policies.html?p=size-guide">Size guide</a></li>
-          <li><a href="contact.html">Contact</a></li>
+          <li><a href="/shipping">Shipping</a></li>
+          <li><a href="/returns">Returns &amp; exchanges</a></li>
+          <li><a href="/size-guide">Size guide</a></li>
+          <li><a href="/contact">Contact</a></li>
         </ul></div>
       </div>
       <p class="legal">${esc(S.footer.text)}</p>
@@ -75,7 +75,7 @@ function layout(cats) {
 
 const card = (p) => {
   const onSale = p.sale_price && p.sale_price < p.price;
-  return `<a class="card fade" href="product.html?slug=${encodeURIComponent(p.slug)}">
+  return `<a class="card fade" href="/product/${encodeURIComponent(p.slug)}">
     <div class="thumb"><img loading="lazy" src="${esc(img(p))}" alt="${esc(p.name)}">
       ${!p.in_stock ? `<span class="badge out">Sold out</span>` : onSale ? `<span class="badge">Sale</span>` : ""}</div>
     <div><h3>${esc(p.name)}</h3>
@@ -102,10 +102,10 @@ function home(cats, products) {
   <section class="section alt"><div class="wrap">
     <div class="section-head"><span class="eyebrow">Featured</span><h2>Just for you</h2></div>
     ${shown.length ? `<div class="grid">${shown.map(card).join("")}</div>` : `<p class="empty">New pieces arriving soon.</p>`}
-    <p class="center" style="margin-top:40px"><a class="btn ghost" href="shop.html">View all</a></p>
+    <p class="center" style="margin-top:40px"><a class="btn ghost" href="/shop">View all</a></p>
   </div></section>
   <section class="section"><div class="wrap split solo">
-    <div class="txt"><span class="eyebrow">${esc(S.site.tagline)}</span><h2>${esc(S.story.title)}</h2><p>${esc(S.story.text)}</p><a class="btn ghost" href="about.html">Read more</a></div>
+    <div class="txt"><span class="eyebrow">${esc(S.site.tagline)}</span><h2>${esc(S.story.title)}</h2><p>${esc(S.story.text)}</p><a class="btn ghost" href="/about">Read more</a></div>
   </div></section>
   <section class="section alt"><div class="wrap values">
     ${S.values.items.map((v) => `<div><h3>${esc(v.title)}</h3><p>${esc(v.text)}</p></div>`).join("")}
@@ -122,8 +122,8 @@ function shop(cats, products) {
 }
 
 async function product(cats) {
-  const p = await getProduct(params.get("slug"));
-  if (!p) { $("#app").innerHTML = `<div class="wrap"><p class="empty">Product not found. <a href="shop.html" style="text-decoration:underline">Back to shop</a></p></div>`; return; }
+  const p = await getProduct((location.pathname.split("/").filter(Boolean).pop() || "").replace(/\.html$/, ""));
+  if (!p) { $("#app").innerHTML = `<div class="wrap"><p class="empty">Product not found. <a href="/shop" style="text-decoration:underline">Back to shop</a></p></div>`; return; }
   const cat = cats.find((c) => c.id === p.category_id);
   const onSale = p.sale_price && p.sale_price < p.price;
   const eff = onSale ? p.sale_price : p.price;
@@ -131,7 +131,7 @@ async function product(cats) {
   let cur = 0, size = p.sizes.length ? "" : "n/a", colour = p.colors.length === 1 ? p.colors[0].name : p.colors.length ? "" : "n/a";
 
   $("#app").innerHTML = `<div class="wrap">
-    <div class="crumbs"><a href="shop.html">Shop</a>${cat ? ` / <a href="shop.html?cat=${esc(cat.slug)}">${esc(cat.name)}</a>` : ""}</div>
+    <div class="crumbs"><a href="/shop">Shop</a>${cat ? ` / <a href="/shop?cat=${esc(cat.slug)}">${esc(cat.name)}</a>` : ""}</div>
     <div class="pdp">
       <div class="gallery"><div class="main"><img id="main" src="${esc(img(p))}" alt="${esc(p.name)}"></div>
         ${n > 1 ? `<div class="thumbs" id="thumbs">${p.images.map((u, i) => `<button data-i="${i}" class="${i ? "" : "on"}"><img src="${esc(u)}" alt=""></button>`).join("")}</div>` : ""}
@@ -148,7 +148,7 @@ async function product(cats) {
       </div>
     </div></div>`;
 
-  const link = () => new URL(`product.html?slug=${encodeURIComponent(p.slug)}`, location.href).href;
+  const link = () => new URL(`/product/${encodeURIComponent(p.slug)}`, location.href).href;
   const message = () => S.whatsapp.template
     .replaceAll("{product}", p.name).replaceAll("{size}", size || "-").replaceAll("{colour}", colour || "-")
     .replaceAll("{price}", money(eff)).replaceAll("{link}", link())
@@ -200,7 +200,7 @@ function contact() {
 
 function policies() {
   const map = { shipping: ["Shipping", S.policies.shipping], returns: ["Returns & exchanges", S.policies.returns], "size-guide": ["Size guide", S.policies.sizeGuide] };
-  const [title, body] = map[params.get("p")] || map.shipping;
+  const [title, body] = map[({ "/shipping": "shipping", "/returns": "returns", "/size-guide": "size-guide" }[location.pathname.replace(/\/$/, "")] || params.get("p"))] || map.shipping;
   $("#app").innerHTML = `<div class="wrap section"><div class="section-head"><span class="eyebrow">Help</span><h1>${esc(title)}</h1></div><div class="prose">${paras(body)}</div></div>`;
   document.title = `${title} · ${S.site.name}`;
 }
