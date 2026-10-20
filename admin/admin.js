@@ -179,7 +179,7 @@ function productList(m) {
   const money = (n) => `${settings.site.currency}${Number(n).toLocaleString("en-IN")}`;
   m.innerHTML = `<div class="bar"><h1>Products</h1><button class="btn" id="add">+ Add product</button></div>
     ${products.length ? `<table><tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th></th></tr>
-    ${products.map((p) => `<tr><td>${p.images?.[0] ? `<img src="${esc(p.images[0])}" alt="">` : ""}</td>
+    ${products.map((p) => `<tr><td>${(p.images?.[0] || p.colors?.find((c) => c.images?.length)?.images[0]) ? `<img src="${esc(p.images?.[0] || p.colors.find((c) => c.images?.length).images[0])}" alt="">` : ""}</td>
       <td>${esc(p.name)}</td><td>${esc(cats.find((c) => c.id === p.category_id)?.name || "-")}</td>
       <td>${p.sale_price ? `<s>${money(p.price)}</s> ${money(p.sale_price)}` : money(p.price)}</td>
       <td>${p.active ? "" : `<span class="tag no">Hidden</span> `}${p.in_stock ? `<span class="tag ok">In stock</span>` : `<span class="tag no">Sold out</span>`}${p.featured ? ` <span class="tag">Featured</span>` : ""}</td>
@@ -212,7 +212,9 @@ function productForm(m) {
           <button data-m="${i}:-1">←</button><button data-m="${i}:x">✕</button><button data-m="${i}:1">→</button></div></figure>`).join("")}</div>
         <input type="file" id="files" accept="image/*" multiple></div>
       <div class="card"><label>Sizes (comma separated, leave empty if not applicable)<input type="text" id="sizes" value="${esc(p.sizes.join(", "))}"></label>
-        <div><b>Colours</b><div id="cols" style="margin-top:8px">${p.colors.map((c, i) => `<div class="colorrow"><input type="color" data-ch="${i}" value="${esc(c.hex)}"><input type="text" data-cn="${i}" value="${esc(c.name)}" placeholder="Colour name"><button class="btn sm danger" data-cd="${i}">✕</button></div>`).join("")}</div>
+        <div><b>Colours</b><p class="muted">Add photos to a colour and the product page switches to them when that colour is chosen.</p><div id="cols" style="margin-top:8px">${p.colors.map((c, i) => `<div style="margin-bottom:14px"><div class="colorrow"><input type="color" data-ch="${i}" value="${esc(c.hex)}"><input type="text" data-cn="${i}" value="${esc(c.name)}" placeholder="Colour name"><button class="btn sm danger" data-cd="${i}">✕</button></div>
+          <div class="imgs">${(c.images || []).map((u, j) => `<figure><img src="${esc(u)}" alt=""><div class="acts"><button data-cm="${i}:${j}:-1">←</button><button data-cm="${i}:${j}:x">✕</button><button data-cm="${i}:${j}:1">→</button></div></figure>`).join("")}</div>
+          <input type="file" data-cf="${i}" accept="image/*" multiple></div>`).join("")}</div>
           <button class="btn sm ghost" id="addcol">+ Add colour</button></div></div>
       <div class="card">
         <label class="check"><input type="checkbox" id="stock" ${p.in_stock ? "checked" : ""}> In stock</label>
@@ -227,7 +229,7 @@ function productForm(m) {
     p.price = +$("#price").value || 0; p.sale_price = $("#sale").value === "" ? null : +$("#sale").value;
     p.description = $("#desc").value; p.details = $("#details").value;
     p.sizes = $("#sizes").value.split(",").map((s) => s.trim()).filter(Boolean);
-    p.colors = [...document.querySelectorAll("[data-ch]")].map((el, i) => ({ hex: el.value, name: document.querySelector(`[data-cn="${i}"]`).value.trim() || "Colour" }));
+    p.colors = [...document.querySelectorAll("[data-ch]")].map((el, i) => ({ hex: el.value, name: document.querySelector(`[data-cn="${i}"]`).value.trim() || "Colour", images: p.colors[i]?.images || [] }));
     p.in_stock = $("#stock").checked; p.featured = $("#feat").checked; p.active = $("#active").checked;
   };
   const wire = () => {
@@ -236,6 +238,12 @@ function productForm(m) {
     m.onclick = (e) => {
       const d = e.target.dataset;
       if (d.cd !== undefined) { collect(); p.colors.splice(+d.cd, 1); draw(); }
+      if (d.cm) {
+        collect(); const [ci, j, a] = d.cm.split(":"); const arr = p.colors[+ci].images; const idx = +j;
+        if (a === "x") arr.splice(idx, 1);
+        else { const k = idx + +a; if (k >= 0 && k < arr.length) [arr[idx], arr[k]] = [arr[k], arr[idx]]; }
+        draw();
+      }
       if (d.m) {
         collect(); const [i, a] = d.m.split(":"); const idx = +i;
         if (a === "x") p.images.splice(idx, 1);
@@ -243,6 +251,11 @@ function productForm(m) {
         draw();
       }
     };
+    document.querySelectorAll("[data-cf]").forEach((inp) => inp.onchange = async (e) => {
+      collect(); toast("Uploading…"); const c = p.colors[+inp.dataset.cf];
+      try { for (const f of e.target.files) c.images.push(await upload(f)); toast("Photos added."); } catch (x) { toast(x.message, true); }
+      draw();
+    });
     $("#files").onchange = async (e) => {
       collect(); toast("Uploading…");
       try { for (const f of e.target.files) p.images.push(await upload(f)); toast("Photos added."); } catch (x) { toast(x.message, true); }

@@ -18,7 +18,7 @@ function placeholder(seedText = "") {
 }
 const abs = (u) => (/^(https?:|\/|data:)/.test(u) ? u : "/" + u); // root-relative, so it works on /product/... too
 const priceHtml = (p) => (!p.price ? "" : p.sale_price && p.sale_price < p.price ? `<s>${money(p.price)}</s>${money(p.sale_price)}` : money(p.price));
-const img = (p, i = 0) => p.images?.[i] || placeholder(p.name);
+const img = (p, i = 0) => p.images?.[i] || (i === 0 && p.colors?.find((c) => c.images?.length)?.images[0]) || placeholder(p.name);
 
 function applyTheme() {
   const q = params.get("theme");
