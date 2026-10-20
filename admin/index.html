@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>AYLIN Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f6f2ee; --card:#fff; --ink:#2a2225; --muted:#80767a; --line:#e5dcd4; --accent:#b5838a; --danger:#b3453f; --ok:#3d7a55; }
+  * { box-sizing:border-box; margin:0; }
+  body { font:400 15px/1.5 "Jost",system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+  h1,h2,h3 { font-family:"Cormorant Garamond",serif; font-weight:500; }
+  .login { min-height:100vh; display:grid; place-items:center; padding:20px; }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:32px; width:min(400px,100%); display:grid; gap:14px; }
+  .shell { display:grid; grid-template-columns:230px 1fr; min-height:100vh; }
+  @media (max-width:800px){ .shell{grid-template-columns:1fr} aside{position:static!important;height:auto!important;flex-direction:row!important;flex-wrap:wrap;overflow-x:auto} }
+  aside { background:#1f1a1c; color:#eee; padding:22px 14px; display:flex; flex-direction:column; gap:4px; position:sticky; top:0; height:100vh; }
+  aside h2 { font-size:26px; letter-spacing:.3em; padding:0 10px 18px; }
+  aside button { text-align:left; background:none; border:0; color:#cfc7c9; padding:10px 12px; border-radius:8px; cursor:pointer; font:inherit; }
+  aside button.on, aside button:hover { background:#34292d; color:#fff; }
+  aside .spacer { flex:1; }
+  main { padding:28px clamp(16px,4vw,44px) 80px; max-width:1000px; width:100%; }
+  .bar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:22px; flex-wrap:wrap; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; display:grid; gap:16px; margin-bottom:18px; }
+  label { display:grid; gap:6px; font-size:13px; color:var(--muted); }
+  input[type=text],input[type=email],input[type=password],input[type=number],textarea,select {
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; color:var(--ink); background:#fff; }
+  textarea { min-height:96px; resize:vertical; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:600px){ .row2{grid-template-columns:1fr} }
+  .btn { background:var(--ink); color:#fff; border:1px solid var(--ink); padding:10px 18px; border-radius:8px; cursor:pointer; font:inherit; }
+  .btn.ghost { background:transparent; color:var(--ink); border-color:var(--line); }
+  .btn.danger { background:transparent; color:var(--danger); border-color:var(--danger); }
+  .btn.sm { padding:6px 10px; font-size:13px; }
+  .toast { position:fixed; right:18px; bottom:18px; background:var(--ink); color:#fff; padding:12px 18px; border-radius:8px; opacity:0; transition:.3s; pointer-events:none; }
+  .toast.show { opacity:1; } .toast.err { background:var(--danger); }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  td,th { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); font-size:14px; }
+  th { color:var(--muted); font-weight:400; font-size:12px; text-transform:uppercase; letter-spacing:.1em; }
+  td img { width:44px; height:56px; object-fit:cover; border-radius:4px; background:#eee; }
+  .imgs { display:flex; flex-wrap:wrap; gap:10px; }
+  .imgs figure { width:96px; display:grid; gap:4px; }
+  .imgs img { width:96px; height:120px; object-fit:cover; border-radius:6px; border:1px solid var(--line); }
+  .imgs .acts { display:flex; gap:4px; justify-content:center; }
+  .imgs .acts button { border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; padding:1px 7px; }
+  .tag { display:inline-block; font-size:11px; padding:2px 8px; border-radius:99px; background:#eee; color:var(--muted); }
+  .tag.ok { background:#e2f1e8; color:var(--ok); } .tag.no { background:#f6dedc; color:var(--danger); }
+  .colorrow { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  .colorrow input[type=color] { width:44px; height:38px; padding:0; border:1px solid var(--line); border-radius:6px; }
+  .note { background:#fff8ec; border:1px solid #f0dfb8; padding:14px 16px; border-radius:10px; font-size:14px; }
+  .check { display:flex; align-items:center; gap:8px; color:var(--ink); font-size:14px; }
+  .muted { color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+<script src="../js/config.js"></script>
+<script src="../js/seed.js"></script>
+<script src="../js/data.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
