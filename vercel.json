@@ -2,9 +2,9 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/product/:slug", "destination": "/product.html" },
-    { "source": "/shipping", "destination": "/policies.html" },
-    { "source": "/returns", "destination": "/policies.html" },
-    { "source": "/size-guide", "destination": "/policies.html" }
+    { "source": "/product/:slug", "destination": "/product" },
+    { "source": "/shipping", "destination": "/policies" },
+    { "source": "/returns", "destination": "/policies" },
+    { "source": "/size-guide", "destination": "/policies" }
   ]
 }
