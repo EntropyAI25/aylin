@@ -50,7 +50,7 @@ const DEFAULT_SETTINGS = {
     number: "+91 83558 76607",
     template:
       "Hi AYLIN! I'd like to order:\n\n*{product}*\nSize: {size}\nColour: {colour}\nPrice: {price}\n\n{link}",
-    generalMessage: "Hi AYLIN! I have a question.",
+    generalMessage: "Hi Aylin, I'm interested in your collection and would love to place an order.",
   },
   policies: {
     shipping:

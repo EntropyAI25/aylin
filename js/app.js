@@ -185,8 +185,6 @@ async function product(cats) {
     document.querySelectorAll("#colours .cdot").forEach((x) => x.classList.toggle("on", x === b));
   });
   $("#order")?.addEventListener("click", () => {
-    if (!size) return ($("#hint").textContent = "Please choose a size.");
-    if (!colour) return ($("#hint").textContent = "Please choose a colour.");
     window.open(waLink(message()), "_blank", "noopener");
   });
   const ask = $("#ask");
