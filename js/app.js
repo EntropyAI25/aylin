@@ -5,6 +5,9 @@ const paras = (t = "") => t.split(/\n{2,}/).filter(Boolean).map((p) => `<p>${esc
 const page = document.body.dataset.page;
 const params = new URLSearchParams(location.search);
 let S; // settings
+// Inside the admin's visual editor (same-origin iframe) the page tags editable blocks and can re-render from draft settings.
+const EDIT = (() => { try { return window.parent !== window && !!window.parent.AYLIN_ADMIN; } catch (e) { return false; } })();
+const ed = (key, fields = "", id = "") => (EDIT ? ` data-edit="${key}"${fields ? ` data-fields="${fields}"` : ""}${id ? ` data-id="${esc(id)}"` : ""}` : "");
 
 const money = (n) => `${S.site.currency}${Number(n).toLocaleString("en-IN")}`;
 const waNumber = () => S.whatsapp.number.replace(/\D/g, "");
@@ -23,16 +26,18 @@ const img = (p, i = 0) => p.images?.[i] || (i === 0 && p.colors?.find((c) => c.i
 // "auto" follows the phone/browser setting: dark -> midnight, light -> luxe.
 function applyTheme() {
   const q = params.get("theme");
-  if (q === "luxe" || q === "midnight") sessionStorage.setItem("aylin-theme", q);
-  else if (q === "auto") sessionStorage.removeItem("aylin-theme");
-  try { localStorage.setItem("aylin-site-theme", S.site.theme || "auto"); } catch (e) {}
+  if (!EDIT) {
+    if (q === "luxe" || q === "midnight") sessionStorage.setItem("aylin-theme", q);
+    else if (q === "auto") sessionStorage.removeItem("aylin-theme");
+    try { localStorage.setItem("aylin-site-theme", S.site.theme || "auto"); } catch (e) {}
+  }
   const dark = matchMedia("(prefers-color-scheme: dark)");
   const set = () => {
-    const t = sessionStorage.getItem("aylin-theme") || S.site.theme || "auto";
+    const t = (!EDIT && sessionStorage.getItem("aylin-theme")) || S.site.theme || "auto";
     document.documentElement.dataset.theme = t === "auto" ? (dark.matches ? "midnight" : "luxe") : t === "midnight" ? "midnight" : "luxe";
     document.querySelectorAll("#tt button").forEach((b) => b.classList.toggle("on", b.dataset.t === (sessionStorage.getItem("aylin-theme") || "auto")));
   };
-  dark.addEventListener("change", set);
+  if (!applyTheme.bound) { dark.addEventListener("change", set); applyTheme.bound = true; }
   window.applyThemeNow = set;
   set();
 }
@@ -44,14 +49,15 @@ function layout(cats) {
   const waIcon = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.5c0 2.3.6 4.4 1.7 6.3L3 29l7.4-1.9c1.8 1 3.8 1.500 5.900 1.500 7 0 12.700-5.600 12.700-12.500S23 3 16 3zm0 22.900c-1.900 0-3.700-.5-5.300-1.500l-.4-.2-4.400 1.100 1.200-4.200-.3-.4a10.200 10.200 0 0 1-1.600-5.500C5.200 9.800 10 5.200 16 5.200s10.800 4.600 10.800 10.300S21.900 25.900 16 25.900zm5.900-7.600c-.3-.2-1.900-.9-2.200-1s-.5-.2-.7.200-.8 1-1 1.200-.4.200-.7.100a8.600 8.600 0 0 1-4.300-3.700c-.3-.6.300-.6.900-1.800.1-.2 0-.4 0-.5s-.7-1.700-1-2.300c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.100-.8.400s-1 1-1 2.500 1.100 2.900 1.200 3.100c.2.200 2.100 3.300 5.200 4.500 1.900.8 2.700.9 3.600.7.600-.1 1.900-.8 2.200-1.500.3-.7.300-1.400.2-1.500s-.3-.2-.6-.4z"/></svg>`;
 
   const header = `
-    ${S.announcement.enabled && S.announcement.text ? `<div class="announce">${esc(S.announcement.text)}</div>` : ""}
+    ${S.announcement.enabled && S.announcement.text ? `<div class="announce"${ed("announcement")}>${esc(S.announcement.text)}</div>`
+      : EDIT ? `<div class="announce" style="opacity:.55"${ed("announcement")}>Announcement bar is off. Tap to add one.</div>` : ""}
     <header class="site"><div class="wrap nav">
-      <a class="brand" href="/" aria-label="${esc(S.site.name)} home">${esc(S.site.name)}</a>
+      <a class="brand" href="/"${ed("site")} aria-label="${esc(S.site.name)} home">${esc(S.site.name)}</a>
       <nav class="menu" id="menu">
         ${nav.map(([h, l]) => `<a href="${h}" class="${here === h ? "on" : ""}">${l}</a>`).join("")}
       </nav>
       <div class="nav-r">
-        <a class="icon-btn" href="${esc(S.social.instagram)}" target="_blank" rel="noopener" aria-label="Instagram">
+        <a class="icon-btn" href="${esc(S.social.instagram)}"${ed("social")} target="_blank" rel="noopener" aria-label="Instagram">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg>
         </a>
         <button class="icon-btn burger" id="burger" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18M3 12h18M3 17h18"/></svg></button>
@@ -61,7 +67,7 @@ function layout(cats) {
   const footer = `
     <footer class="site"><div class="wrap">
       <div class="foot">
-        <div><img class="logo" src="${esc(abs(S.site.logo))}" alt="${esc(S.site.name)}"><p style="color:var(--muted)">${esc(S.site.tagline)}</p></div>
+        <div${ed("site")}><img class="logo" src="${esc(abs(S.site.logo))}" alt="${esc(S.site.name)}"><p style="color:var(--muted)">${esc(S.site.tagline)}</p></div>
         <div><h4>Help</h4><ul>
           <li><a href="/shipping">Shipping</a></li>
           <li><a href="/returns">Returns &amp; exchanges</a></li>
@@ -69,9 +75,9 @@ function layout(cats) {
           <li><a href="/contact">Contact</a></li>
         </ul></div>
       </div>
-      <p class="legal">${esc(S.footer.text)}</p>
+      <p class="legal"${ed("footer")}>${esc(S.footer.text)}</p>
     </div></footer>
-    <a class="fab" href="${general}" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">${waIcon}</a>
+    <a class="fab" href="${general}"${ed("whatsapp", "number,generalMessage")} target="_blank" rel="noopener" aria-label="Chat on WhatsApp">${waIcon}</a>
     ${CONFIG.SHOW_THEME_TOGGLE ? `<div class="theme-toggle" id="tt"><button data-t="auto">Auto</button><button data-t="luxe">Luxe</button><button data-t="midnight">Midnight</button></div>` : ""}`;
 
   $("#top").innerHTML = header;
@@ -86,7 +92,7 @@ function layout(cats) {
 
 const card = (p) => {
   const onSale = p.sale_price && p.sale_price < p.price;
-  return `<a class="card fade" href="/product/${encodeURIComponent(p.slug)}">
+  return `<a class="card fade" href="/product/${encodeURIComponent(p.slug)}"${ed("product", "", p.id)}>
     <div class="thumb"><img loading="lazy" src="${esc(img(p))}" alt="${esc(p.name)}">
       ${!p.in_stock ? `<span class="badge out">Sold out</span>` : onSale ? `<span class="badge">Sale</span>` : ""}</div>
     <div><h3>${esc(p.name)}</h3>
@@ -101,7 +107,7 @@ function home(cats, products) {
   const feat = products.filter((p) => p.featured).slice(0, 8);
   const shown = feat.length ? feat : products.slice(0, 8);
   $("#app").innerHTML = `
-  <section class="hero ${h.image ? "has-img" : ""}" ${h.image ? `style="background-image:url('${esc(h.image)}')"` : ""}>
+  <section class="hero ${h.image ? "has-img" : ""}"${ed("hero")} ${h.image ? `style="background-image:url('${esc(h.image)}')"` : ""}>
     <div class="wrap hero-in fade">
       ${h.image ? "" : `<img class="hero-mark" src="${esc(abs(S.site.logo))}" alt="">`}
       <span class="eyebrow">${esc(h.eyebrow)}</span>
@@ -116,10 +122,10 @@ function home(cats, products) {
     <p class="center" style="margin-top:40px"><a class="btn ghost" href="/shop">View all</a></p>
   </div></section>
   <section class="section"><div class="wrap split solo">
-    <div class="txt"><span class="eyebrow">${esc(S.site.tagline)}</span><h2>${esc(S.story.title)}</h2><p>${esc(S.story.text)}</p><a class="btn ghost" href="/about">Read more</a></div>
+    <div class="txt"${ed("story")}><span class="eyebrow">${esc(S.site.tagline)}</span><h2>${esc(S.story.title)}</h2><p>${esc(S.story.text)}</p><a class="btn ghost" href="/about">Read more</a></div>
   </div></section>
   <section class="section alt"><div class="wrap values">
-    ${S.values.items.map((v) => `<div><h3>${esc(v.title)}</h3><p>${esc(v.text)}</p></div>`).join("")}
+    ${S.values.items.map((v, i) => `<div${ed("values", `items.${i}.`)}><h3>${esc(v.title)}</h3><p>${esc(v.text)}</p></div>`).join("")}
   </div></section>`;
   document.title = `${S.site.name} · ${S.site.tagline}`;
 }
@@ -143,7 +149,7 @@ async function product(cats) {
 
   $("#app").innerHTML = `<div class="wrap">
     <div class="crumbs"><a href="/shop">Shop</a>${cat ? ` / <a href="/shop?cat=${esc(cat.slug)}">${esc(cat.name)}</a>` : ""}</div>
-    <div class="pdp">
+    <div class="pdp"${ed("product", "", p.id)}>
       <div class="gallery"><div class="main"><img id="main" src="${esc(gal[0] || img(p))}" alt="${esc(p.name)}"></div>
         <div class="thumbs" id="thumbs"></div>
       </div>
@@ -154,7 +160,7 @@ async function product(cats) {
         ${p.colors.length > 1 || (p.colors.length === 1) ? `<div class="opt"><h4>Colour</h4><div class="row" id="colours">${p.colors.map((c) => `<button class="cdot ${p.colors.length === 1 ? "on" : ""}" data-n="${esc(c.name)}"><i style="background:${esc(c.hex)}"></i>${esc(c.name)}</button>`).join("")}</div></div>` : ""}
         ${p.sizes.length ? `<div class="opt"><h4>Size</h4><div class="row" id="sizes">${p.sizes.map((s) => `<button class="size" data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div></div>` : ""}
         <div class="hint" id="hint"></div>
-        ${p.in_stock ? `<button class="btn wa" id="order">Order on WhatsApp</button>` : `<button class="btn" disabled>Sold out</button><a class="btn ghost" id="ask" target="_blank" rel="noopener">Ask about restock</a>`}
+        ${p.in_stock ? `<button class="btn wa" id="order"${ed("whatsapp", "template")}>Order on WhatsApp</button>` : `<button class="btn" disabled>Sold out</button><a class="btn ghost" id="ask"${ed("whatsapp", "number")} target="_blank" rel="noopener">Ask about restock</a>`}
         ${p.details ? `<div class="details"><h4 class="eyebrow" style="margin-bottom:8px">Details</h4><ul>${p.details.split("\n").filter(Boolean).map((d) => `<li>${esc(d)}</li>`).join("")}</ul></div>` : ""}
       </div>
     </div></div>`;
@@ -195,7 +201,7 @@ async function product(cats) {
 function about() {
   $("#app").innerHTML = `<div class="wrap section">
     <div class="split solo">
-      <div class="txt"><span class="eyebrow">Our story</span><h1 style="color:var(--ink);font-size:clamp(32px,4.5vw,54px)">${esc(S.about.title)}</h1>${paras(S.about.body)}</div>
+      <div class="txt"${ed("about")}><span class="eyebrow">Our story</span><h1 style="color:var(--ink);font-size:clamp(32px,4.5vw,54px)">${esc(S.about.title)}</h1>${paras(S.about.body)}</div>
     </div></div>`;
   document.title = `Our story · ${S.site.name}`;
 }
@@ -205,18 +211,18 @@ function contact() {
   $("#app").innerHTML = `<div class="wrap section">
     <div class="section-head"><span class="eyebrow">We'd love to hear from you</span><h1>Contact</h1></div>
     <div class="contact-grid">
-      <div><h3>WhatsApp</h3><a href="${waLink(S.whatsapp.generalMessage)}" target="_blank" rel="noopener">${esc(S.whatsapp.number)}</a></div>
-      <div><h3>Instagram</h3><a href="${esc(S.social.instagram)}" target="_blank" rel="noopener">@theaylinlabel</a></div>
-      ${c.email ? `<div><h3>Email</h3><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></div>` : ""}
+      <div${ed("whatsapp", "number,generalMessage")}><h3>WhatsApp</h3><a href="${waLink(S.whatsapp.generalMessage)}" target="_blank" rel="noopener">${esc(S.whatsapp.number)}</a></div>
+      <div${ed("social")}><h3>Instagram</h3><a href="${esc(S.social.instagram)}" target="_blank" rel="noopener">@theaylinlabel</a></div>
+      ${c.email ? `<div${ed("contact")}><h3>Email</h3><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></div>` : ""}
     </div>
-    <p class="center" style="margin-top:36px"><a class="btn wa" href="${waLink(S.whatsapp.generalMessage)}" target="_blank" rel="noopener">Chat on WhatsApp</a></p></div>`;
+    <p class="center" style="margin-top:36px"><a class="btn wa"${ed("whatsapp", "generalMessage")} href="${waLink(S.whatsapp.generalMessage)}" target="_blank" rel="noopener">Chat on WhatsApp</a></p></div>`;
   document.title = `Contact · ${S.site.name}`;
 }
 
 function policies() {
-  const map = { shipping: ["Shipping", S.policies.shipping], returns: ["Returns & exchanges", S.policies.returns], "size-guide": ["Size guide", S.policies.sizeGuide] };
-  const [title, body] = map[({ "/shipping": "shipping", "/returns": "returns", "/size-guide": "size-guide" }[location.pathname.replace(/\/$/, "")] || params.get("p"))] || map.shipping;
-  $("#app").innerHTML = `<div class="wrap section"><div class="section-head"><span class="eyebrow">Help</span><h1>${esc(title)}</h1></div><div class="prose">${paras(body)}</div></div>`;
+  const map = { shipping: ["Shipping", S.policies.shipping, "shipping"], returns: ["Returns & exchanges", S.policies.returns, "returns"], "size-guide": ["Size guide", S.policies.sizeGuide, "sizeGuide"] };
+  const [title, body, field] = map[({ "/shipping": "shipping", "/returns": "returns", "/size-guide": "size-guide" }[location.pathname.replace(/\/$/, "")] || params.get("p"))] || map.shipping;
+  $("#app").innerHTML = `<div class="wrap section"><div class="section-head"><span class="eyebrow">Help</span><h1>${esc(title)}</h1></div><div class="prose"${ed("policies", field)}>${paras(body)}</div></div>`;
   document.title = `${title} · ${S.site.name}`;
 }
 
@@ -226,8 +232,12 @@ try {
   S = await getSettings();
   applyTheme();
   const [cats, products] = await Promise.all([getCategories(), getProducts()]);
-  layout(cats);
-  ({ home: () => home(cats, products), shop: () => shop(cats, products), product: () => product(cats), about, contact, policies }[page])?.();
+  const render = async () => {
+    layout(cats);
+    await ({ home: () => home(cats, products), shop: () => shop(cats, products), product: () => product(cats), about, contact, policies }[page])?.();
+  };
+  await render();
+  if (EDIT) window.aylinRerender = (next) => { S = next; applyTheme(); return render(); };
 } catch (e) {
   console.error(e);
   $("#app").innerHTML = `<p class="empty">Something went wrong loading the page. Please refresh.</p>`;

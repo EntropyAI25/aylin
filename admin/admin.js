@@ -35,7 +35,7 @@ const get = (o, p) => p.split(".").reduce((a, k) => a?.[k], o);
 function set(o, p, v) { const ks = p.split("."); const l = ks.pop(); ks.reduce((a, k) => (a[k] ??= {}), o)[l] = v; }
 
 const ADMIN_EMAIL = "admin@theaylinlabel.in", PASSKEY_PREFIX = "aylin-";
-let sb, cats = [], products = [], settings, tab = "products", editing = null;
+let sb, cats = [], products = [], settings, tab = "visual", editing = null;
 
 /* ---------- Auth ---------- */
 async function boot() {
@@ -79,7 +79,8 @@ async function loadAll() {
 
 /* ---------- Shell ---------- */
 function shell() {
-  const items = [["products", "Products"], ["categories", "Categories"], ...Object.entries(SECTIONS).map(([k, v]) => [k, v.label])];
+  if (tab === "visual") return visual();
+  const items = [["visual", "✎ Edit the website"], ["products", "Products"], ["categories", "Categories"], ...Object.entries(SECTIONS).map(([k, v]) => [k, v.label])];
   root.innerHTML = `<div class="shell"><aside><h2>AYLIN</h2>
     ${items.map(([k, l]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${l}</button>`).join("")}
     <div class="spacer"></div><button id="view">View website ↗</button><button id="out">Sign out</button></aside>
@@ -109,7 +110,7 @@ function wireUploads(scope) {
   scope.querySelectorAll("input[data-up]").forEach((inp) => {
     inp.onchange = async () => {
       if (!inp.files[0]) return;
-      try { const url = await upload(inp.files[0]); $("#" + inp.dataset.up).value = url; toast("Uploaded. Don't forget to save."); }
+      try { const url = await upload(inp.files[0]); const t = $("#" + inp.dataset.up); t.value = url; t.dispatchEvent(new Event("input", { bubbles: true })); toast("Uploaded. Don't forget to save."); }
       catch (e) { toast(e.message, true); }
     };
   });
@@ -123,18 +124,25 @@ async function upload(file) {
   return sb.storage.from("media").getPublicUrl(path).data.publicUrl;
 }
 
-function sectionForm(m, key) {
+function sectionForm(m, key, { only, onInput, onSaved } = {}) {
   const sec = SECTIONS[key];
   const cur = settings[key] || DEFAULT_SETTINGS[key];
-  m.innerHTML = `<div class="bar"><h1>${esc(sec.label)}</h1><button class="btn" id="save">Save changes</button></div>
-    <div class="card">${sec.fields.map((f) => fieldHTML(f, get(cur, f[0]))).join("")}</div>`;
-  wireUploads(m);
-  $("#save").onclick = async () => {
+  const fields = only ? sec.fields.filter(([p]) => only.split(",").some((o) => p.startsWith(o))) : sec.fields;
+  const draft = () => {
     const val = JSON.parse(JSON.stringify(cur));
     m.querySelectorAll("[data-p]").forEach((el) => set(val, el.dataset.p, el.type === "checkbox" ? el.checked : el.value));
+    return val;
+  };
+  m.innerHTML = `<div class="bar"><h1>${esc(sec.label)}</h1><button class="btn" id="save">Save changes</button></div>
+    <div class="card">${fields.map((f) => fieldHTML(f, get(cur, f[0]))).join("")}</div>`;
+  wireUploads(m);
+  m.oninput = onInput ? () => onInput(draft()) : null;
+  $("#save").onclick = async () => {
+    const val = draft();
     const { error } = await sb.from("settings").upsert({ key, value: val });
     if (error) return toast(error.message, true);
     settings[key] = val; toast("Saved. Live on the website.");
+    onSaved?.(val);
   };
 }
 
@@ -175,6 +183,8 @@ function categoryView(m) {
 async function reloadCats() { cats = (await sb.from("categories").select("*").order("sort")).data || []; }
 
 /* ---------- Products ---------- */
+const newProduct = () => ({ _new: true, name: "", price: 0, images: [], sizes: ["S", "M", "L"], colors: [], in_stock: true, featured: false, active: true, description: "", details: "", category_id: cats[0]?.id || null });
+
 function productList(m) {
   const money = (n) => `${settings.site.currency}${Number(n).toLocaleString("en-IN")}`;
   m.innerHTML = `<div class="bar"><h1>Products</h1><button class="btn" id="add">+ Add product</button></div>
@@ -185,11 +195,11 @@ function productList(m) {
       <td>${p.active ? "" : `<span class="tag no">Hidden</span> `}${p.in_stock ? `<span class="tag ok">In stock</span>` : `<span class="tag no">Sold out</span>`}${p.featured ? ` <span class="tag">Featured</span>` : ""}</td>
       <td><button class="btn sm ghost" data-id="${p.id}">Edit</button></td></tr>`).join("")}</table>`
       : `<div class="note">No products yet. Click <b>Add product</b> to create your first one.</div>`}`;
-  $("#add").onclick = () => { editing = { _new: true, name: "", price: 0, images: [], sizes: ["S", "M", "L"], colors: [], in_stock: true, featured: false, active: true, description: "", details: "", category_id: cats[0]?.id || null }; shell(); };
+  $("#add").onclick = () => { editing = newProduct(); shell(); };
   m.onclick = (e) => { const id = e.target.dataset.id; if (id) { editing = structuredClone(products.find((p) => p.id === id)); shell(); } };
 }
 
-function productForm(m) {
+function productForm(m, onDone = shell) {
   const p = editing;
   const draw = () => {
     m.innerHTML = `<div class="bar"><h1>${p._new ? "New product" : "Edit product"}</h1>
@@ -233,7 +243,7 @@ function productForm(m) {
     p.in_stock = $("#stock").checked; p.featured = $("#feat").checked; p.active = $("#active").checked;
   };
   const wire = () => {
-    $("#back").onclick = () => { editing = null; shell(); };
+    $("#back").onclick = () => { editing = null; onDone(); };
     $("#addcol").onclick = () => { collect(); p.colors.push({ name: "", hex: "#d9a9a6" }); draw(); };
     m.onclick = (e) => {
       const d = e.target.dataset;
@@ -265,7 +275,7 @@ function productForm(m) {
       if (!confirm(`Delete "${p.name}" permanently?`)) return;
       const { error } = await sb.from("products").delete().eq("id", p.id);
       if (error) return toast(error.message, true);
-      products = products.filter((x) => x.id !== p.id); editing = null; toast("Deleted."); shell();
+      products = products.filter((x) => x.id !== p.id); editing = null; toast("Deleted."); onDone(true);
     });
     $("#save").onclick = async () => {
       collect();
@@ -283,10 +293,112 @@ function productForm(m) {
       if (res.error) return toast(res.error.message, true);
       const i = products.findIndex((x) => x.id === res.data.id);
       i >= 0 ? (products[i] = res.data) : products.unshift(res.data);
-      editing = null; toast("Saved. Live on the website."); shell();
+      editing = null; toast("Saved. Live on the website."); onDone(true, res.data);
     };
   };
   draw();
+}
+
+/* ---------- Visual editor: the real website, tap a part to edit it ---------- */
+window.AYLIN_ADMIN = true; // lets the site (in the iframe) know it is being edited
+
+const STATIC_PAGES = [["/", "Home"], ["/shop", "Shop"], ["/about", "Our story"], ["/contact", "Contact"], ["/shipping", "Shipping"], ["/returns", "Returns"], ["/size-guide", "Size guide"]];
+
+function visual() {
+  let sel = null, dirty = false, timer;
+  root.innerHTML = `<div class="vis" id="vis">
+    <div class="vtop"><button id="menu" aria-label="All settings">☰</button><select id="pages"></select><button id="addp">+ Product</button></div>
+    <div class="vframe"><iframe id="frame" title="Website"></iframe><div class="vhint" id="hint">Tap anything with a dotted outline to edit it</div></div>
+    <div class="sheet" id="sheet"><div class="grab"><button id="tall" aria-label="Resize">⇅</button><span id="stitle"></span><button id="close" aria-label="Close">✕</button></div><div class="sbody" id="sbody"></div></div></div>`;
+  const frame = $("#frame"), sheet = $("#sheet"), body = $("#sbody"), vis = $("#vis");
+  const win = () => frame.contentWindow, doc = () => frame.contentDocument;
+
+  const buildPages = (cur) => {
+    const opts = [...STATIC_PAGES, ...products.filter((p) => p.active).map((p) => [`/product/${p.slug}`, `Product: ${p.name}`])];
+    $("#pages").innerHTML = opts.map(([v, l]) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(l)}</option>`).join("");
+  };
+  const here = () => { try { return win().location.pathname.replace(/\/$/, "").replace(/\.html$/, "") || "/"; } catch (e) { return "/"; } };
+
+  const matches = (el) => sel && el.dataset.edit === sel.edit && (el.dataset.fields || "") === sel.fields && (el.dataset.id || "") === sel.id;
+  const mark = (scroll) => {
+    const d = doc(); if (!d) return;
+    d.querySelectorAll(".ed-sel").forEach((x) => x.classList.remove("ed-sel"));
+    const el = sel && [...d.querySelectorAll("[data-edit]")].find(matches);
+    if (el) { el.classList.add("ed-sel"); if (scroll) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 150); }
+  };
+  const preview = (over) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (!win()?.aylinRerender) return;
+      const next = structuredClone(settings); if (over) next[over.key] = over.val;
+      win().aylinRerender(next).then(() => mark(false));
+    }, 150);
+  };
+
+  const closeSheet = (force) => {
+    if (!force && dirty && !confirm("Discard your unsaved changes?")) return false;
+    if (dirty && !force) preview(); // put the page back to what is saved
+    dirty = false; sel = null; editing = null; body.innerHTML = ""; body.oninput = body.onclick = null;
+    sheet.classList.remove("open"); vis.classList.remove("sheet-open"); mark(false); return true;
+  };
+  const open = (title) => { sheet.classList.add("open"); vis.classList.add("sheet-open"); $("#stitle").textContent = title; $("#hint").style.display = "none"; mark(true); };
+  const refreshFrame = (to) => {
+    const cur = to || here();
+    const ok = Boolean(to) || STATIC_PAGES.some(([v]) => v === cur) || products.some((p) => p.active && cur === `/product/${p.slug}`);
+    buildPages(ok ? cur : "/");
+    if (to || !ok) frame.src = ok ? cur : "/"; else win().location.reload();
+  };
+  const productDone = (saved, row) => { closeSheet(true); if (saved) refreshFrame(row ? `/product/${row.slug}` : undefined); };
+
+  const edit = (s) => {
+    if (sel && sel.edit === s.edit && sel.fields === s.fields && sel.id === s.id) return;
+    if (!closeSheet()) return;
+    if (s.edit === "product") {
+      const p = products.find((x) => x.id === s.id); if (!p) return;
+      sel = s; editing = structuredClone(p);
+      open("Product");
+      productForm(body, productDone);
+      return;
+    }
+    const sec = SECTIONS[s.edit]; if (!sec) return;
+    sel = s;
+    open(sec.label);
+    sectionForm(body, s.edit, {
+      only: s.fields,
+      onInput: (val) => { dirty = true; preview({ key: s.edit, val }); },
+      onSaved: () => { dirty = false; closeSheet(true); preview(); },
+    });
+  };
+
+  const hook = () => {
+    const d = doc(); if (!d || !d.body) return;
+    const st = d.createElement("style");
+    st.textContent = `[data-edit]{outline:1.5px dashed rgba(181,131,138,.95)!important;outline-offset:-2px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+      [data-edit].ed-sel{outline:3px solid #b5838a!important;box-shadow:inset 0 0 0 9999px rgba(181,131,138,.14)}
+      .fade{animation:none!important}`;
+    d.head.appendChild(st);
+    d.addEventListener("click", (e) => {
+      const el = e.target.closest?.("[data-edit]");
+      if (el) { e.preventDefault(); e.stopPropagation(); edit({ edit: el.dataset.edit, fields: el.dataset.fields || "", id: el.dataset.id || "" }); return; }
+      const a = e.target.closest?.("a[href]");
+      if (a && (a.target === "_blank" || new URL(a.href, d.baseURI).origin !== location.origin)) e.preventDefault();
+    }, true);
+    const cur = here();
+    $("#pages").value = [...$("#pages").options].some((o) => o.value === cur) ? cur : "/";
+    mark(false);
+  };
+
+  frame.addEventListener("load", hook);
+  $("#pages").onchange = (e) => { if (closeSheet()) frame.src = e.target.value; else e.target.value = here(); };
+  $("#close").onclick = () => closeSheet();
+  $("#tall").onclick = () => vis.classList.toggle("tall");
+  $("#addp").onclick = () => {
+    if (!closeSheet()) return;
+    editing = newProduct(); sel = { edit: "new", fields: "", id: "" }; open("New product");
+    productForm(body, productDone);
+  };
+  $("#menu").onclick = () => { if (closeSheet()) { tab = "products"; shell(); } };
+  buildPages("/"); frame.src = "/";
 }
 
 boot();
