@@ -49,7 +49,7 @@ const DEFAULT_SETTINGS = {
   whatsapp: {
     number: "+91 83558 76607",
     template:
-      "Hi AYLIN! I'd like to order:\n\n*{product}*\nSize: {size}\nColour: {colour}\nPrice: {price}\n\n{link}",
+      "Hi Aylin, I'm interested in your collection and would love to place an order.\n\n*{product}*\nSize: {size}\nColour: {colour}\nPrice: {price}\n\n{link}",
     generalMessage: "Hi Aylin, I'm interested in your collection and would love to place an order.",
   },
   policies: {
