@@ -317,7 +317,7 @@ function visual() {
   let sel = null, dirty = false, timer;
   root.innerHTML = `<div class="vis" id="vis">
     <div class="vtop"><button id="menu" aria-label="All settings">☰</button><select id="pages"></select><button id="addp">＋ Add product</button></div>
-    <div class="vframe"><iframe id="frame" title="Website"></iframe><div class="vhint" id="hint">Tap anything with a dotted outline to edit it</div><button class="fab-add" id="fabadd">＋ Add product</button></div>
+    <div class="vframe"><iframe id="frame" title="Website"></iframe><div class="vhint" id="hint">Tap anything with a dotted outline to edit it</div></div>
     <div class="sheet" id="sheet"><div class="grab"><button id="tall" aria-label="Resize">⇅</button><span id="stitle"></span><button id="close" aria-label="Close">✕</button></div><div class="sbody" id="sbody"></div></div></div>`;
   const frame = $("#frame"), sheet = $("#sheet"), body = $("#sbody"), vis = $("#vis");
   const win = () => frame.contentWindow, doc = () => frame.contentDocument;
@@ -407,8 +407,9 @@ function visual() {
   $("#pages").onchange = (e) => { if (closeSheet()) frame.src = e.target.value; else e.target.value = here(); };
   $("#close").onclick = () => closeSheet();
   $("#tall").onclick = () => vis.classList.toggle("tall");
-  $("#addp").onclick = $("#fabadd").onclick = addProduct;
+  $("#addp").onclick = addProduct;
   $("#menu").onclick = () => { if (closeSheet()) { tab = "products"; shell(); } };
+  setTimeout(() => ($("#hint").style.display = "none"), 5000);
   buildPages("/"); frame.src = "/";
 }
 

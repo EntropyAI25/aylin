@@ -134,7 +134,7 @@ function home(cats, products) {
 function shop(cats, products) {
   $("#app").innerHTML = `<div class="wrap">
     <div class="page-head"><span class="eyebrow">The collection</span><h1>Shop</h1></div>
-    ${products.length || EDIT ? `<div class="grid">${products.map(card).join("")}${EDIT ? `<div class="card"${ed("newproduct")} style="aspect-ratio:3/4;border:2px dashed #b5838a;border-radius:6px;display:grid;place-items:center;text-align:center;color:#b5838a;font-size:20px;cursor:pointer">＋ Add product</div>` : ""}</div>` : `<p class="empty">Nothing here yet. Check back soon.</p>`}
+    ${products.length || EDIT ? `<div class="grid">${products.map(card).join("")}${EDIT ? `<div class="card"${ed("newproduct")} style="align-self:start;aspect-ratio:3/4;border:2px dashed #b5838a;border-radius:6px;display:grid;place-items:center;text-align:center;color:#b5838a;font-size:20px;cursor:pointer">＋ Add product</div>` : ""}</div>` : `<p class="empty">Nothing here yet. Check back soon.</p>`}
     <div style="height:80px"></div></div>`;
   document.title = `Shop · ${S.site.name}`;
 }
