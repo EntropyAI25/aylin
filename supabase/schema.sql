@@ -21,6 +21,7 @@ create table if not exists products (
   category_id uuid references categories(id) on delete set null,
   price numeric not null default 0,
   sale_price numeric,
+  sale_label text,
   description text default '',
   details text default '',
   images text[] default '{}',

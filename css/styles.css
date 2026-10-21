@@ -110,6 +110,8 @@ header.site {
 .badge.out { background: var(--muted); }
 .card h3 { font-size: 20px; }
 .price { font-size: 15px; letter-spacing: .05em; color: var(--accent); }
+.pill { display: inline-block; margin-left: 10px; background: var(--accent); color: var(--accent-ink); font-size: 11px; letter-spacing: .15em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; vertical-align: middle; }
+.sale-note { color: var(--accent); font-size: 13px; letter-spacing: .08em; margin-top: -8px; }
 .price s { color: var(--muted); opacity: .8; margin-right: 8px; }
 .swatches { display: flex; gap: 6px; }
 .sw { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line); }

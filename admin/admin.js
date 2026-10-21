@@ -35,6 +35,7 @@ const get = (o, p) => p.split(".").reduce((a, k) => a?.[k], o);
 function set(o, p, v) { const ks = p.split("."); const l = ks.pop(); ks.reduce((a, k) => (a[k] ??= {}), o)[l] = v; }
 
 const ADMIN_EMAIL = "admin@theaylinlabel.in", PASSKEY_PREFIX = "aylin-";
+let SALE_LABEL_OK = false; // true once the sale_label column exists (supabase/sale-label.sql)
 let sb, cats = [], products = [], settings, tab = "visual", editing = null;
 
 /* ---------- Auth ---------- */
@@ -73,7 +74,8 @@ async function loadAll() {
     toast("This account is not an admin.", true);
     return loginView();
   }
-  cats = c.data || []; products = p.data || []; settings = s;
+  cats = c.data || []; products = p.data || [];
+  SALE_LABEL_OK = products.some((x) => "sale_label" in x); settings = s;
   shell();
 }
 
@@ -214,6 +216,9 @@ function productForm(m, onDone = shell) {
           <label>Price<input type="number" id="price" value="${p.price}" min="0"></label>
           <label>Sale price (optional)<input type="number" id="sale" value="${p.sale_price ?? ""}" min="0"></label>
         </div>
+        <div class="muted" id="off"></div>
+        ${SALE_LABEL_OK ? `<label>Sale message (optional), e.g. Product launch discount<input type="text" id="slabel" value="${esc(p.sale_label || "")}"></label>`
+          : `<div class="note">To add a sale message, run <b>supabase/sale-label.sql</b> once in Supabase (SQL Editor).</div>`}
         <label>Description<textarea id="desc">${esc(p.description)}</textarea></label>
         <label>Details (one per line)<textarea id="details">${esc(p.details)}</textarea></label>
       </div>
@@ -233,10 +238,13 @@ function productForm(m, onDone = shell) {
         ${p._new ? "" : `<button class="btn danger" id="del" style="justify-self:start">Delete product</button>`}
       </div>`;
     wire();
+    const off = () => { const a = +$("#price").value, b = +$("#sale").value; $("#off").textContent = b && a && b < a ? `Shown on the website as ${Math.round((1 - b / a) * 100)}% off` : ""; };
+    $("#price").oninput = $("#sale").oninput = off; off();
   };
   const collect = () => {
     p.name = $("#name").value.trim(); p.category_id = $("#cat").value || null; p.sort = +$("#sort").value || 0;
     p.price = +$("#price").value || 0; p.sale_price = $("#sale").value === "" ? null : +$("#sale").value;
+    if (SALE_LABEL_OK) p.sale_label = $("#slabel").value.trim();
     p.description = $("#desc").value; p.details = $("#details").value;
     p.sizes = $("#sizes").value.split(",").map((s) => s.trim()).filter(Boolean);
     p.colors = [...document.querySelectorAll("[data-ch]")].map((el, i) => ({ hex: el.value, name: document.querySelector(`[data-cn="${i}"]`).value.trim() || "Colour", images: p.colors[i]?.images || [] }));
@@ -282,6 +290,7 @@ function productForm(m, onDone = shell) {
       if (!p.name) return toast("Please enter a name.", true);
       const row = {
         name: p.name, category_id: p.category_id, price: p.price, sale_price: p.sale_price, description: p.description, details: p.details,
+        ...(SALE_LABEL_OK ? { sale_label: p.sale_label || null } : {}),
         images: p.images, sizes: p.sizes, colors: p.colors, in_stock: p.in_stock, featured: p.featured, active: p.active, sort: p.sort,
       };
       let res;

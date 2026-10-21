@@ -20,6 +20,7 @@ function placeholder(seedText = "") {
   return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
 }
 const abs = (u) => (/^(https?:|\/|data:)/.test(u) ? u : "/" + u); // root-relative, so it works on /product/... too
+const pct = (p) => Math.round((1 - p.sale_price / p.price) * 100);
 const priceHtml = (p) => (!p.price ? "" : p.sale_price && p.sale_price < p.price ? `<s>${money(p.price)}</s>${money(p.sale_price)}` : money(p.price));
 const img = (p, i = 0) => p.images?.[i] || (i === 0 && p.colors?.find((c) => c.images?.length)?.images[0]) || placeholder(p.name);
 
@@ -94,7 +95,7 @@ const card = (p) => {
   const onSale = p.sale_price && p.sale_price < p.price;
   return `<a class="card fade" href="/product/${encodeURIComponent(p.slug)}"${ed("product", "", p.id)}>
     <div class="thumb"><img loading="lazy" src="${esc(img(p))}" alt="${esc(p.name)}">
-      ${!p.in_stock ? `<span class="badge out">Sold out</span>` : onSale ? `<span class="badge">Sale</span>` : ""}</div>
+      ${!p.in_stock ? `<span class="badge out">Sold out</span>` : onSale ? `<span class="badge">${pct(p)}% off</span>` : ""}</div>
     <div><h3>${esc(p.name)}</h3>
       <div class="price">${priceHtml(p)}</div>
       ${p.colors.length ? `<div class="swatches">${p.colors.map((c) => `<span class="sw" title="${esc(c.name)}" style="background:${esc(c.hex)}"></span>`).join("")}</div>` : ""}
@@ -155,7 +156,8 @@ async function product(cats) {
       </div>
       <div class="info">
         <div><h1 style="font-size:clamp(30px,4vw,44px)">${esc(p.name)}</h1></div>
-        <div class="price">${priceHtml(p)}</div>
+        <div class="price">${priceHtml(p)}${onSale ? ` <span class="pill">${pct(p)}% off</span>` : ""}</div>
+        ${onSale && p.sale_label ? `<div class="sale-note">${esc(p.sale_label)}</div>` : ""}
         ${p.description ? `<div class="details">${paras(p.description)}</div>` : ""}
         ${p.colors.length > 1 || (p.colors.length === 1) ? `<div class="opt"><h4>Colour</h4><div class="row" id="colours">${p.colors.map((c) => `<button class="cdot ${p.colors.length === 1 ? "on" : ""}" data-n="${esc(c.name)}"><i style="background:${esc(c.hex)}"></i>${esc(c.name)}</button>`).join("")}</div></div>` : ""}
         ${p.sizes.length ? `<div class="opt"><h4>Size</h4><div class="row" id="sizes">${p.sizes.map((s) => `<button class="size" data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div></div>` : ""}
