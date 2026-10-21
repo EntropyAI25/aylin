@@ -61,6 +61,9 @@
   .vframe { flex:1; min-height:0; position:relative; display:flex; }
   .vis.sheet-open .vframe { padding-bottom:var(--sh); }
   .vframe iframe { flex:1; width:100%; border:0; background:#fff; }
+  .fab-add { position:absolute; right:14px; bottom:14px; background:var(--accent); color:#fff; border:0; border-radius:99px; padding:12px 18px; font:inherit; font-weight:500; box-shadow:0 4px 14px rgba(0,0,0,.3); cursor:pointer; }
+  .vis.sheet-open .fab-add { display:none; }
+  .vhint { left:14px!important; right:auto; transform:none!important; max-width:55%; white-space:normal!important; }
   .vhint { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); background:rgba(31,26,28,.92); color:#fff; padding:8px 14px; border-radius:99px; font-size:13px; pointer-events:none; white-space:nowrap; }
   .sheet { position:fixed; left:0; right:0; bottom:0; height:var(--sh); background:var(--bg); border-radius:16px 16px 0 0; box-shadow:0 -6px 30px rgba(0,0,0,.28); transform:translateY(105%); transition:transform .25s; z-index:20; display:flex; flex-direction:column; }
   .sheet.open { transform:none; }

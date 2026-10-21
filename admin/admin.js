@@ -307,8 +307,8 @@ const STATIC_PAGES = [["/", "Home"], ["/shop", "Shop"], ["/about", "Our story"],
 function visual() {
   let sel = null, dirty = false, timer;
   root.innerHTML = `<div class="vis" id="vis">
-    <div class="vtop"><button id="menu" aria-label="All settings">☰</button><select id="pages"></select><button id="addp">+ Product</button></div>
-    <div class="vframe"><iframe id="frame" title="Website"></iframe><div class="vhint" id="hint">Tap anything with a dotted outline to edit it</div></div>
+    <div class="vtop"><button id="menu" aria-label="All settings">☰</button><select id="pages"></select><button id="addp">＋ Add product</button></div>
+    <div class="vframe"><iframe id="frame" title="Website"></iframe><div class="vhint" id="hint">Tap anything with a dotted outline to edit it</div><button class="fab-add" id="fabadd">＋ Add product</button></div>
     <div class="sheet" id="sheet"><div class="grab"><button id="tall" aria-label="Resize">⇅</button><span id="stitle"></span><button id="close" aria-label="Close">✕</button></div><div class="sbody" id="sbody"></div></div></div>`;
   const frame = $("#frame"), sheet = $("#sheet"), body = $("#sbody"), vis = $("#vis");
   const win = () => frame.contentWindow, doc = () => frame.contentDocument;
@@ -350,7 +350,13 @@ function visual() {
   };
   const productDone = (saved, row) => { closeSheet(true); if (saved) refreshFrame(row ? `/product/${row.slug}` : undefined); };
 
+  const addProduct = () => {
+    if (!closeSheet()) return;
+    editing = newProduct(); sel = { edit: "new", fields: "", id: "" }; open("New product");
+    productForm(body, productDone);
+  };
   const edit = (s) => {
+    if (s.edit === "newproduct") return addProduct();
     if (sel && sel.edit === s.edit && sel.fields === s.fields && sel.id === s.id) return;
     if (!closeSheet()) return;
     if (s.edit === "product") {
@@ -392,11 +398,7 @@ function visual() {
   $("#pages").onchange = (e) => { if (closeSheet()) frame.src = e.target.value; else e.target.value = here(); };
   $("#close").onclick = () => closeSheet();
   $("#tall").onclick = () => vis.classList.toggle("tall");
-  $("#addp").onclick = () => {
-    if (!closeSheet()) return;
-    editing = newProduct(); sel = { edit: "new", fields: "", id: "" }; open("New product");
-    productForm(body, productDone);
-  };
+  $("#addp").onclick = $("#fabadd").onclick = addProduct;
   $("#menu").onclick = () => { if (closeSheet()) { tab = "products"; shell(); } };
   buildPages("/"); frame.src = "/";
 }
