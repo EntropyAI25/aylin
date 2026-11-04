@@ -77,7 +77,7 @@ function layout(cats) {
         </ul></div>
       </div>
       <p class="legal"${ed("footer")}>${esc(S.footer.text)}</p>
-      <p class="credit">Website built by <span class="by"><img src="${esc(abs("/assets/entropy-ai.png"))}" alt="" width="16" height="17"><span>Entropy AI</span></span></p>
+      <p class="credit"><a href="https://connect-with-entropy.netlify.app/" target="_blank" rel="noopener" aria-label="An Entropy AI creation"><img src="${esc(abs("/assets/entropy-ai.png"))}" alt="" width="16" height="17"><span>An Entropy AI creation</span></a></p>
     </div></footer>
     <a class="fab" href="${general}"${ed("whatsapp", "number,generalMessage")} target="_blank" rel="noopener" aria-label="Chat on WhatsApp">${waIcon}</a>
     ${CONFIG.SHOW_THEME_TOGGLE ? `<div class="theme-toggle" id="tt"><button data-t="auto">Auto</button><button data-t="luxe">Luxe</button><button data-t="midnight">Midnight</button></div>` : ""}`;
