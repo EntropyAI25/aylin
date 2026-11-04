@@ -1,14 +1,5 @@
 
-const live = Boolean(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY);
-
-let clientPromise;
-function client() {
-  if (!live) return Promise.resolve(null);
-  clientPromise ||= import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm").then((m) =>
-    m.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY)
-  );
-  return clientPromise;
-}
+// Reads the shop from the /api routes, which read Cloudflare D1.
 
 const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
 function merge(base, over) {
@@ -19,25 +10,30 @@ function merge(base, over) {
   return out;
 }
 
+async function api(path) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`${path} ${res.status}`);
+  return res.json();
+}
+
 let settingsCache;
 async function getSettings() {
   if (settingsCache) return settingsCache;
-  let s = DEFAULT_SETTINGS;
-  const sb = await client();
-  if (sb) {
-    const { data, error } = await sb.from("settings").select("key,value");
-    if (error) console.error("settings", error);
-    else s = merge(DEFAULT_SETTINGS, Object.fromEntries(data.map((r) => [r.key, r.value])));
+  try {
+    return (settingsCache = merge(DEFAULT_SETTINGS, await api("/api/settings")));
+  } catch (e) {
+    console.error("settings", e);
+    return DEFAULT_SETTINGS; // not cached, so the next page view tries again
   }
-  return (settingsCache = s);
 }
 
 async function getCategories() {
-  const sb = await client();
-  if (!sb) return SEED_CATEGORIES;
-  const { data, error } = await sb.from("categories").select("*").order("sort");
-  if (error) { console.error("categories", error); return []; }
-  return data;
+  try {
+    return await api("/api/categories");
+  } catch (e) {
+    console.error("categories", e);
+    return [];
+  }
 }
 
 function norm(p) {
@@ -45,11 +41,12 @@ function norm(p) {
 }
 
 async function getProducts() {
-  const sb = await client();
-  if (!sb) return SEED_PRODUCTS.map(norm);
-  const { data, error } = await sb.from("products").select("*").eq("active", true).order("sort").order("created_at", { ascending: false });
-  if (error) { console.error("products", error); return []; }
-  return data.map(norm);
+  try {
+    return (await api("/api/products")).map(norm);
+  } catch (e) {
+    console.error("products", e);
+    return [];
+  }
 }
 
 async function getProduct(slug) {

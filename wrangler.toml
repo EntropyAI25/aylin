@@ -1,0 +1,10 @@
+name = "aylin"
+compatibility_date = "2026-10-01"
+pages_build_output_dir = "."
+
+# Cloudflare D1 database for the shop (settings, categories, products).
+# Functions in functions/ read and write it as env.DB.
+[[d1_databases]]
+binding = "DB"
+database_name = "aylin"
+database_id = "043e1b34-ed1f-4b44-8c16-f05ac6ea72c5"
