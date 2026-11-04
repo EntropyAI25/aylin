@@ -106,8 +106,6 @@ const card = (p) => {
 /* ---------- Pages ---------- */
 function home(cats, products) {
   const h = S.hero;
-  const feat = products.filter((p) => p.featured).slice(0, 8);
-  const shown = feat.length ? feat : products.slice(0, 8);
   $("#app").innerHTML = `
   <section class="hero ${h.image ? "has-img" : ""}"${ed("hero")} ${h.image ? `style="background-image:url('${esc(h.image)}')"` : ""}>
     <div class="wrap hero-in fade">
@@ -118,11 +116,6 @@ function home(cats, products) {
       <a class="btn" href="${esc(h.ctaLink)}">${esc(h.ctaText)}</a>
     </div>
   </section>
-  <section class="section alt"><div class="wrap">
-    <div class="section-head"><span class="eyebrow">Featured</span><h2>Just for you</h2></div>
-    ${shown.length ? `<div class="grid">${shown.map(card).join("")}</div>` : `<p class="empty">New pieces arriving soon.</p>`}
-    <p class="center" style="margin-top:40px"><a class="btn ghost" href="/shop">View all</a></p>
-  </div></section>
   <section class="section"><div class="wrap split solo">
     <div class="txt"${ed("story")}><span class="eyebrow">${esc(S.site.tagline)}</span><h2>${esc(S.story.title)}</h2><p>${esc(S.story.text)}</p><a class="btn ghost" href="/about">Read more</a></div>
   </div></section>
