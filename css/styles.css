@@ -193,6 +193,9 @@ footer.site::before { content: ""; position: absolute; top: 0; left: 50%; transf
 .foot .logo { width: 130px; margin-bottom: 6px; }
 [data-theme="luxe"] .foot .logo { filter: brightness(.6); }
 .legal { text-align: center; color: var(--muted); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--line); }
+.credit { text-align: center; margin-top: 14px; font-size: 11px; letter-spacing: .14em; color: var(--muted); opacity: .8; }
+.credit .by { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; transition: color .2s, opacity .2s; }
+.credit img { width: 16px; height: auto; }
 
 .fab { position: fixed; right: 18px; bottom: 18px; z-index: 40; width: 56px; height: 56px; border-radius: 50%; background: #1fa855; display: grid; place-items: center; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
 .fab svg { width: 28px; height: 28px; fill: #fff; }
