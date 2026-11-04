@@ -7,5 +7,5 @@ const CONFIG = {
 
   // Shows a small "Auto / Luxe / Midnight" preview switch on every page.
   // Set to false when you launch.
-  SHOW_THEME_TOGGLE: true,
+  SHOW_THEME_TOGGLE: false,
 };
