@@ -169,6 +169,7 @@ async function product(cats) {
 
   const link = () => new URL(`/product/${encodeURIComponent(p.slug)}`, location.href).href;
   const message = () => S.whatsapp.template
+    .replace("your collection", "your {product}") // older saved templates had no product name
     .replaceAll("{product}", p.name).replaceAll("{size}", size || "-").replaceAll("{colour}", colour || "-")
     .replaceAll("{price}", p.price ? money(eff) : "-").replaceAll("{link}", link())
     .replace(/^.*(Size|Colour|Price): (n\/a|-)\n?/gm, "");
