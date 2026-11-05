@@ -150,7 +150,7 @@ async function product(cats) {
       </div>
       <div class="info">
         <div><h1 style="font-size:clamp(30px,4vw,44px)">${esc(p.name)}</h1></div>
-        <div class="price">${priceHtml(p)}${onSale ? ` <span class="pill">${pct(p)}% off</span>` : ""}</div>${p.price ? '<div class="ship">plus shipping</div>' : ""}
+        <div class="price">${priceHtml(p)}${onSale ? ` <span class="pill">${pct(p)}% off</span>` : ""}</div>${p.price && S.site.shippingNote ? `<div class="ship">${esc(S.site.shippingNote)}</div>` : ""}
         ${onSale && p.sale_label ? `<div class="sale-note">${esc(p.sale_label)}</div>` : ""}
         ${p.description ? `<div class="details">${paras(p.description)}</div>` : ""}
         ${p.colors.length > 1 || (p.colors.length === 1) ? `<div class="opt"><h4>Colour</h4><div class="row" id="colours">${p.colors.map((c) => `<button class="cdot ${p.colors.length === 1 ? "on" : ""}" data-n="${esc(c.name)}"><i style="background:${esc(c.hex)}"></i>${esc(c.name)}</button>`).join("")}</div></div>` : ""}

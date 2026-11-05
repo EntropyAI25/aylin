@@ -7,6 +7,7 @@ const DEFAULT_SETTINGS = {
     theme: "auto", // auto | luxe | midnight
     logo: "assets/logo-transparent.png",
     currency: "₹",
+    shippingNote: "plus shipping",
   },
   announcement: {
     enabled: true,

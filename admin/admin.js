@@ -26,7 +26,8 @@ const SECTIONS = {
   policies: { label: "Policies", fields: [["shipping", "Shipping", "textarea"], ["returns", "Returns & exchanges", "textarea"], ["sizeGuide", "Size guide", "textarea"]] },
   site: { label: "Appearance & brand", fields: [
     ["theme", "Website theme", "select:auto=Auto (phone dark = Midnight, light = Luxe),luxe=Soft luxe (ivory, blush),midnight=Midnight (black, silver)"],
-    ["name", "Brand name", "text"], ["tagline", "Tagline", "text"], ["logo", "Logo", "image"], ["currency", "Currency symbol", "text"]] },
+    ["name", "Brand name", "text"], ["tagline", "Tagline", "text"], ["logo", "Logo", "image"], ["currency", "Currency symbol", "text"],
+    ["shippingNote", "Note under the price (e.g. plus shipping). Leave blank to hide", "text"]] },
   footer: { label: "Footer", fields: [["text", "Footer text", "text"]] },
 };
 
