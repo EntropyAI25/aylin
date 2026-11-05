@@ -1,5 +1,4 @@
-// Default content. Used as the fallback for any setting not yet saved from the
-// admin, and as the whole catalogue while Supabase is not connected (demo mode).
+// Default content. Used as the fallback for any setting not yet saved from the admin.
 
 const DEFAULT_SETTINGS = {
   site: {
@@ -62,50 +61,3 @@ const DEFAULT_SETTINGS = {
   },
   footer: { text: "© AYLIN. All rights reserved." },
 };
-
-const SEED_CATEGORIES = [
-  { id: "c1", slug: "kaftans", name: "Kaftans", image: "", sort: 1 },
-  { id: "c2", slug: "kurtis", name: "Kurtis", image: "", sort: 2 },
-];
-
-const colours = {
-  ivory: { name: "Ivory", hex: "#f3ece1" },
-  rose: { name: "Rose", hex: "#d9a9a6" },
-  sage: { name: "Sage", hex: "#a9b79c" },
-  night: { name: "Midnight", hex: "#1e2233" },
-  saffron: { name: "Saffron", hex: "#d8a24a" },
-  // Colours with their own photos: choosing one on the product page swaps the gallery.
-  maroon: { name: "Maroon", hex: "#8f1d22", images: ["front", "side", "back"].map((v) => `/assets/kaftan/maroon-${v}.jpg`) },
-  yellow: { name: "Yellow", hex: "#f1de6b", images: ["front", "side", "back"].map((v) => `/assets/kaftan/yellow-${v}.jpg`) },
-  white: { name: "White", hex: "#f7f4ee", images: ["front", "side", "back"].map((v) => `/assets/kaftan/white-${v}.jpg`) },
-};
-const SIZES = ["XS", "S", "M", "L", "XL"];
-
-const SEED_PRODUCTS = [
-  {
-    name: "Kaftan",
-    cat: "c1",
-    price: 2499,
-    sizes: ["40", "44"],
-    c: ["maroon", "yellow", "white"],
-    feat: true,
-    description: "A relaxed, flowing kaftan with Kashmiri embroidery along the neckline and hem.",
-    details: "",
-  },
-].map((p, i) => ({
-  id: "p" + (i + 1),
-  slug: p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
-  name: p.name,
-  category_id: p.cat,
-  price: p.price,
-  sale_price: p.sale || null,
-  description: p.description ?? "A sample product shown in demo mode. Replace it from the admin with your own photos, price and description.",
-  details: p.details ?? "Soft, breathable fabric\nHand-finished detailing\nDry clean recommended",
-  images: p.c.flatMap((k) => colours[k].images ?? []),
-  sizes: p.sizes ?? SIZES,
-  colors: p.c.map((k) => colours[k]),
-  in_stock: true,
-  featured: p.feat,
-  active: true,
-  sort: i + 1,
-}));

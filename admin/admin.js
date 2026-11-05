@@ -2,7 +2,6 @@
 const $ = (s, r = document) => r.querySelector(s);
 const root = $("#root");
 const esc = (v = "") => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const slugify = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 function toast(msg, err) {
   const t = $("#toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : "");
   clearTimeout(toast.t); toast.t = setTimeout(() => (t.className = "toast"), 2800);
@@ -34,48 +33,47 @@ const SECTIONS = {
 const get = (o, p) => p.split(".").reduce((a, k) => a?.[k], o);
 function set(o, p, v) { const ks = p.split("."); const l = ks.pop(); ks.reduce((a, k) => (a[k] ??= {}), o)[l] = v; }
 
-const ADMIN_EMAIL = "admin@theaylinlabel.in", PASSKEY_PREFIX = "aylin-";
-let SALE_LABEL_OK = false; // true once the sale_label column exists (supabase/sale-label.sql)
-let sb, cats = [], products = [], settings, tab = "visual", editing = null;
+let cats = [], products = [], settings, tab = "visual", editing = null;
 
-/* ---------- Auth ---------- */
-async function boot() {
-  if (!live) {
-    root.innerHTML = `<div class="login"><div class="box"><h1>AYLIN Admin</h1>
-      <div class="note"><b>Supabase is not connected yet.</b><br>Follow the steps in README.md, then paste the project URL and anon key into <code>js/config.js</code>.</div></div></div>`;
-    return;
+/* ---------- API ---------- */
+// Calls the /api routes and returns { data, error }, so every caller checks errors the same way.
+async function rpc(method, path, body) {
+  const form = body instanceof FormData;
+  try {
+    const res = await fetch(path, {
+      method,
+      headers: body === undefined || form ? {} : { "content-type": "application/json" },
+      body: body === undefined ? undefined : form ? body : JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) return { data: null, error: { message: data?.error || `Request failed (${res.status})`, status: res.status } };
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: { message: e.message } };
   }
-  sb = await client();
-  const { data } = await sb.auth.getSession();
-  data.session ? await loadAll() : loginView();
 }
 
+/* ---------- Sign in ---------- */
 function loginView() {
   root.innerHTML = `<div class="login"><form class="box" id="f"><h1>AYLIN Admin</h1>
-    <label>Passkey<input type="password" name="passkey" required autofocus autocomplete="off" inputmode="numeric"></label>
+    <label>Password<input type="password" name="password" required autofocus autocomplete="current-password"></label>
     <button class="btn">Enter</button></form></div>`;
   $("#f").onsubmit = async (e) => {
     e.preventDefault();
-    // One shared admin account (see supabase/admin-passkey.sql); Supabase needs 6+ characters, hence the prefix.
-    const { error } = await sb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: PASSKEY_PREFIX + new FormData(e.target).get("passkey").trim() });
-    error ? toast(error.message.includes("Invalid login") ? "Wrong passkey." : error.message, true) : loadAll();
+    const { error } = await rpc("POST", "/api/admin/login", { password: new FormData(e.target).get("password") });
+    error ? toast(error.message, true) : loadAll();
   };
 }
 
+/* ---------- Load ---------- */
 async function loadAll() {
-  const [c, p, s, admin] = await Promise.all([
-    sb.from("categories").select("*").order("sort"),
-    sb.from("products").select("*").order("sort").order("created_at", { ascending: false }),
-    getSettings(),
-    sb.rpc("is_admin"),
-  ]);
-  if (admin.data !== true) {
-    await sb.auth.signOut();
-    toast("This account is not an admin.", true);
-    return loginView();
+  const [c, p, s] = await Promise.all([rpc("GET", "/api/categories"), rpc("GET", "/api/admin/products"), getSettings()]);
+  if (p.error?.status === 401) return loginView();
+  if (p.error) {
+    root.innerHTML = `<div class="login"><div class="box"><h1>AYLIN Admin</h1><div class="note">${esc(p.error.message)}</div></div></div>`;
+    return;
   }
-  cats = c.data || []; products = p.data || [];
-  SALE_LABEL_OK = products.some((x) => "sale_label" in x); settings = s;
+  cats = c.data || []; products = p.data || []; settings = s;
   shell();
 }
 
@@ -89,7 +87,7 @@ function shell() {
     <main id="main"></main></div>`;
   root.querySelector("aside").onclick = (e) => { const t = e.target.dataset.t; if (t) { tab = t; editing = null; shell(); } };
   $("#view").onclick = () => window.open("/", "_blank");
-  $("#out").onclick = async () => { await sb.auth.signOut(); loginView(); };
+  $("#out").onclick = async () => { await rpc("POST", "/api/admin/logout"); loginView(); };
   const m = $("#main");
   if (tab === "products") editing ? productForm(m) : productList(m);
   else if (tab === "categories") categoryView(m);
@@ -119,11 +117,11 @@ function wireUploads(scope) {
 }
 
 async function upload(file) {
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await sb.storage.from("media").upload(path, file, { cacheControl: "31536000" });
-  if (error) throw error;
-  return sb.storage.from("media").getPublicUrl(path).data.publicUrl;
+  const form = new FormData();
+  form.append("file", file);
+  const { data, error } = await rpc("POST", "/api/admin/upload", form);
+  if (error) throw new Error(error.message);
+  return data.url;
 }
 
 function sectionForm(m, key, { only, onInput, onSaved } = {}) {
@@ -141,7 +139,7 @@ function sectionForm(m, key, { only, onInput, onSaved } = {}) {
   m.oninput = onInput ? () => onInput(draft()) : null;
   $("#save").onclick = async () => {
     const val = draft();
-    const { error } = await sb.from("settings").upsert({ key, value: val });
+    const { error } = await rpc("PUT", `/api/admin/settings/${key}`, { value: val });
     if (error) return toast(error.message, true);
     settings[key] = val; toast("Saved. Live on the website.");
     onSaved?.(val);
@@ -159,7 +157,7 @@ function categoryView(m) {
     ${cats.length ? "" : `<p class="muted" style="margin-top:12px">No categories yet. Add one to start organising products.</p>`}`;
   $("#add").onclick = async () => {
     const name = prompt("Category name?"); if (!name) return;
-    const { error } = await sb.from("categories").insert({ name, slug: slugify(name), sort: cats.length + 1 });
+    const { error } = await rpc("POST", "/api/admin/categories", { name, sort: cats.length + 1 });
     if (error) return toast(error.message, true);
     await reloadCats(); shell();
   };
@@ -171,18 +169,18 @@ function categoryView(m) {
       const a = e.target.dataset.a; if (!a) return;
       if (a === "del") {
         if (!confirm("Delete this category? Its products stay but become uncategorised.")) return;
-        const { error } = await sb.from("categories").delete().eq("id", tr.dataset.id);
+        const { error } = await rpc("DELETE", `/api/admin/categories/${tr.dataset.id}`);
         return error ? toast(error.message, true) : (await reloadCats(), shell());
       }
       const name = tr.querySelector("[data-k=name]").value.trim();
-      const { error } = await sb.from("categories").update({
-        name, slug: slugify(name), image: tr.querySelector("[data-k=image]").value, sort: +tr.querySelector("[data-k=sort]").value || 0,
-      }).eq("id", tr.dataset.id);
+      const { error } = await rpc("PUT", `/api/admin/categories/${tr.dataset.id}`, {
+        name, image: tr.querySelector("[data-k=image]").value, sort: +tr.querySelector("[data-k=sort]").value || 0,
+      });
       error ? toast(error.message, true) : (toast("Saved."), reloadCats());
     };
   });
 }
-async function reloadCats() { cats = (await sb.from("categories").select("*").order("sort")).data || []; }
+async function reloadCats() { cats = (await rpc("GET", "/api/categories")).data || []; }
 
 /* ---------- Products ---------- */
 const newProduct = () => ({ _new: true, name: "", price: 0, images: [], sizes: ["S", "M", "L"], colors: [], in_stock: true, featured: false, active: true, description: "", details: "", category_id: cats[0]?.id || null });
@@ -217,8 +215,7 @@ function productForm(m, onDone = shell) {
           <label>Sale price (optional)<input type="number" id="sale" value="${p.sale_price ?? ""}" min="0"></label>
         </div>
         <div class="muted" id="off"></div>
-        ${SALE_LABEL_OK ? `<label>Sale message (optional), e.g. Product launch discount<input type="text" id="slabel" value="${esc(p.sale_label || "")}"></label>`
-          : `<div class="note">To add a sale message, run <b>supabase/sale-label.sql</b> once in Supabase (SQL Editor).</div>`}
+        <label>Sale message (optional), e.g. Product launch discount<input type="text" id="slabel" value="${esc(p.sale_label || "")}"></label>
         <label>Description<textarea id="desc">${esc(p.description)}</textarea></label>
         <label>Details (one per line)<textarea id="details">${esc(p.details)}</textarea></label>
       </div>
@@ -244,7 +241,7 @@ function productForm(m, onDone = shell) {
   const collect = () => {
     p.name = $("#name").value.trim(); p.category_id = $("#cat").value || null; p.sort = +$("#sort").value || 0;
     p.price = +$("#price").value || 0; p.sale_price = $("#sale").value === "" ? null : +$("#sale").value;
-    if (SALE_LABEL_OK) p.sale_label = $("#slabel").value.trim();
+    p.sale_label = $("#slabel").value.trim();
     p.description = $("#desc").value; p.details = $("#details").value;
     p.sizes = $("#sizes").value.split(",").map((s) => s.trim()).filter(Boolean);
     p.colors = [...document.querySelectorAll("[data-ch]")].map((el, i) => ({ hex: el.value, name: document.querySelector(`[data-cn="${i}"]`).value.trim() || "Colour", images: p.colors[i]?.images || [] }));
@@ -281,7 +278,7 @@ function productForm(m, onDone = shell) {
     };
     $("#del")?.addEventListener("click", async () => {
       if (!confirm(`Delete "${p.name}" permanently?`)) return;
-      const { error } = await sb.from("products").delete().eq("id", p.id);
+      const { error } = await rpc("DELETE", `/api/admin/products/${p.id}`);
       if (error) return toast(error.message, true);
       products = products.filter((x) => x.id !== p.id); editing = null; toast("Deleted."); onDone(true);
     });
@@ -289,16 +286,11 @@ function productForm(m, onDone = shell) {
       collect();
       if (!p.name) return toast("Please enter a name.", true);
       const row = {
-        name: p.name, category_id: p.category_id, price: p.price, sale_price: p.sale_price, description: p.description, details: p.details,
-        ...(SALE_LABEL_OK ? { sale_label: p.sale_label || null } : {}),
+        name: p.name, category_id: p.category_id, price: p.price, sale_price: p.sale_price, sale_label: p.sale_label || null,
+        description: p.description, details: p.details,
         images: p.images, sizes: p.sizes, colors: p.colors, in_stock: p.in_stock, featured: p.featured, active: p.active, sort: p.sort,
       };
-      let res;
-      if (p._new) {
-        let slug = slugify(p.name), n = 1;
-        while (products.some((x) => x.slug === slug)) slug = `${slugify(p.name)}-${++n}`;
-        res = await sb.from("products").insert({ ...row, slug }).select().single();
-      } else res = await sb.from("products").update(row).eq("id", p.id).select().single();
+      const res = p._new ? await rpc("POST", "/api/admin/products", row) : await rpc("PUT", `/api/admin/products/${p.id}`, row);
       if (res.error) return toast(res.error.message, true);
       const i = products.findIndex((x) => x.id === res.data.id);
       i >= 0 ? (products[i] = res.data) : products.unshift(res.data);
@@ -413,4 +405,4 @@ function visual() {
   buildPages("/"); frame.src = "/";
 }
 
-boot();
+loadAll();
