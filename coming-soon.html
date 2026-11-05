@@ -42,5 +42,6 @@ function size(){w=c.width=innerWidth;h=c.height=innerHeight;stars=Array.from({le
 size();addEventListener('resize',size);
 (function draw(){x.clearRect(0,0,w,h);for(const s of stars){s.p+=s.s;x.globalAlpha=.25+.55*Math.abs(Math.sin(s.p));x.fillStyle='#dfe3ea';x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fill();s.y-=.03;if(s.y<0)s.y=h}requestAnimationFrame(draw)})();
 </script>
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b99634c699d74a56a8a881fc0cfc8082"}'></script>
 </body>
 </html>
