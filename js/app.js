@@ -98,7 +98,7 @@ const card = (p) => {
     <div class="thumb"><img loading="lazy" src="${esc(img(p))}" alt="${esc(p.name)}">
       ${!p.in_stock ? `<span class="badge out">Sold out</span>` : onSale ? `<span class="badge">${pct(p)}% off</span>` : ""}</div>
     <div><h3>${esc(p.name)}</h3>
-      <div class="price">${priceHtml(p)}${p.price ? ' <span class="ship">plus shipping</span>' : ""}</div>
+      <div class="price">${priceHtml(p)}</div>
       ${p.colors.length ? `<div class="swatches">${p.colors.map((c) => `<span class="sw" title="${esc(c.name)}" style="background:${esc(c.hex)}"></span>`).join("")}</div>` : ""}
     </div></a>`;
 };
@@ -150,7 +150,7 @@ async function product(cats) {
       </div>
       <div class="info">
         <div><h1 style="font-size:clamp(30px,4vw,44px)">${esc(p.name)}</h1></div>
-        <div class="price">${priceHtml(p)}${p.price ? ' <span class="ship">plus shipping</span>' : ""}${onSale ? ` <span class="pill">${pct(p)}% off</span>` : ""}</div>
+        <div class="price">${priceHtml(p)}${onSale ? ` <span class="pill">${pct(p)}% off</span>` : ""}</div>${p.price ? '<div class="ship">plus shipping</div>' : ""}
         ${onSale && p.sale_label ? `<div class="sale-note">${esc(p.sale_label)}</div>` : ""}
         ${p.description ? `<div class="details">${paras(p.description)}</div>` : ""}
         ${p.colors.length > 1 || (p.colors.length === 1) ? `<div class="opt"><h4>Colour</h4><div class="row" id="colours">${p.colors.map((c) => `<button class="cdot ${p.colors.length === 1 ? "on" : ""}" data-n="${esc(c.name)}"><i style="background:${esc(c.hex)}"></i>${esc(c.name)}</button>`).join("")}</div></div>` : ""}
