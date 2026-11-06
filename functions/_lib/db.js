@@ -36,6 +36,7 @@ export function productRow(body) {
     price: Number(body.price) || 0,
     sale_price: body.sale_price === null || body.sale_price === "" || body.sale_price === undefined ? null : Number(body.sale_price),
     sale_label: body.sale_label || null,
+    shipping_note: body.shipping_note || null,
     description: body.description ?? "",
     details: body.details ?? "",
     images: JSON.stringify(body.images ?? []),

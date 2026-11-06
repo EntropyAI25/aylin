@@ -23,6 +23,7 @@ create table if not exists products (
   price real not null default 0,
   sale_price real,
   sale_label text,
+  shipping_note text,
   description text default '',
   details text default '',
   images text not null default '[]',   -- JSON array of URLs
