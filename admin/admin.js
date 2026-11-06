@@ -217,7 +217,7 @@ function productForm(m, onDone = shell) {
         </div>
         <div class="muted" id="off"></div>
         <label>Sale message (optional), e.g. Product launch discount<input type="text" id="slabel" value="${esc(p.sale_label || "")}"></label>
-        <label>Shipping note (optional), e.g. plus shipping. Blank = site-wide note<input type="text" id="shipnote" value="${esc(p.shipping_note || "")}"></label>
+        <label>Shipping note (optional), e.g. plus shipping. Blank = uses the site-wide note shown in grey<input type="text" id="shipnote" placeholder="${esc(settings?.site?.shippingNote || "")}" value="${esc(p.shipping_note || "")}"></label>
         <label>Description<textarea id="desc">${esc(p.description)}</textarea></label>
         <label>Details (one per line)<textarea id="details">${esc(p.details)}</textarea></label>
       </div>

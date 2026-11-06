@@ -11,7 +11,8 @@ function merge(base, over) {
 }
 
 async function api(path) {
-  const res = await fetch(path);
+  // Inside the admin preview (iframe), skip caches so edits show up straight away.
+  const res = await fetch(window.parent !== window ? `${path}${path.includes("?") ? "&" : "?"}t=${Date.now()}` : path, window.parent !== window ? { cache: "no-store" } : undefined);
   if (!res.ok) throw new Error(`${path} ${res.status}`);
   return res.json();
 }
