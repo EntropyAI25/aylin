@@ -217,7 +217,6 @@ function productForm(m, onDone = shell) {
         </div>
         <div class="muted" id="off"></div>
         <label>Sale message (optional), e.g. Product launch discount<input type="text" id="slabel" value="${esc(p.sale_label || "")}"></label>
-        <label>Shipping note (optional), e.g. plus shipping. Blank = uses the site-wide note shown in grey<input type="text" id="shipnote" placeholder="${esc(settings?.site?.shippingNote || "")}" value="${esc(p.shipping_note || "")}"></label>
         <label>Description<textarea id="desc">${esc(p.description)}</textarea></label>
         <label>Details (one per line)<textarea id="details">${esc(p.details)}</textarea></label>
       </div>
@@ -243,7 +242,7 @@ function productForm(m, onDone = shell) {
   const collect = () => {
     p.name = $("#name").value.trim(); p.category_id = $("#cat").value || null; p.sort = +$("#sort").value || 0;
     p.price = +$("#price").value || 0; p.sale_price = $("#sale").value === "" ? null : +$("#sale").value;
-    p.sale_label = $("#slabel").value.trim(); p.shipping_note = $("#shipnote").value.trim();
+    p.sale_label = $("#slabel").value.trim();
     p.description = $("#desc").value; p.details = $("#details").value;
     p.sizes = $("#sizes").value.split(",").map((s) => s.trim()).filter(Boolean);
     p.colors = [...document.querySelectorAll("[data-ch]")].map((el, i) => ({ hex: el.value, name: document.querySelector(`[data-cn="${i}"]`).value.trim() || "Colour", images: p.colors[i]?.images || [] }));
@@ -288,7 +287,7 @@ function productForm(m, onDone = shell) {
       collect();
       if (!p.name) return toast("Please enter a name.", true);
       const row = {
-        name: p.name, category_id: p.category_id, price: p.price, sale_price: p.sale_price, sale_label: p.sale_label || null, shipping_note: p.shipping_note || null,
+        name: p.name, category_id: p.category_id, price: p.price, sale_price: p.sale_price, sale_label: p.sale_label || null,
         description: p.description, details: p.details,
         images: p.images, sizes: p.sizes, colors: p.colors, in_stock: p.in_stock, featured: p.featured, active: p.active, sort: p.sort,
       };
