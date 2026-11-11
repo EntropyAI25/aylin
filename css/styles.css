@@ -163,7 +163,7 @@ select.sort { background: var(--card); color: var(--ink); border: 1px solid var(
 .opt .row { display: flex; gap: 8px; flex-wrap: wrap; }
 .size { min-width: 48px; padding: 10px 14px; border: 1px solid var(--line); background: transparent; border-radius: 999px; }
 .size:hover { border-color: var(--accent); }
-.size.out { opacity: .45; text-decoration: line-through; cursor: not-allowed; }
+.size.out { opacity: .5; text-decoration: line-through; cursor: not-allowed; border-style: dashed; background: linear-gradient(to top right, transparent calc(50% - 1px), var(--line) calc(50% - 1px), var(--line) calc(50% + 1px), transparent calc(50% + 1px)); }
 .size.out:hover { border-color: var(--line); }
 .size.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .cdot { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border: 1px solid var(--line); border-radius: 999px; background: transparent; }
