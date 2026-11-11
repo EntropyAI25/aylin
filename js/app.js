@@ -154,7 +154,7 @@ async function product(cats) {
         ${onSale && p.sale_label ? `<div class="sale-note">${esc(p.sale_label)}</div>` : ""}
         ${p.description ? `<div class="details">${paras(p.description)}</div>` : ""}
         ${p.colors.length > 1 || (p.colors.length === 1) ? `<div class="opt"><h4>Colour</h4><div class="row" id="colours">${p.colors.map((c) => `<button class="cdot ${p.colors.length === 1 ? "on" : ""}" data-n="${esc(c.name)}"><i style="background:${esc(c.hex)}"></i>${esc(c.name)}</button>`).join("")}</div></div>` : ""}
-        ${p.sizes.length ? `<div class="opt"><h4>Size</h4><div class="row" id="sizes">${p.sizes.map((s) => `<button class="size" data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div></div>` : ""}
+        ${p.sizes.length ? `<div class="opt"><h4>Size</h4><div class="row" id="sizes">${p.sizes.map((s) => `<button class="size${p.sizes_out.includes(s) ? " out" : ""}" data-s="${esc(s)}"${p.sizes_out.includes(s) ? ` disabled title="Currently unavailable"` : ""}>${esc(s)}</button>`).join("")}</div></div>` : ""}
         <div class="hint" id="hint"></div>
         ${p.in_stock ? `<button class="btn wa" id="order"${ed("whatsapp", "template")}>Order on WhatsApp</button>` : `<button class="btn" disabled>Sold out</button><a class="btn ghost" id="ask"${ed("whatsapp", "number")} target="_blank" rel="noopener">Ask about restock</a>`}
         ${p.details ? `<div class="details"><h4 class="eyebrow" style="margin-bottom:8px">Details</h4><ul>${p.details.split("\n").filter(Boolean).map((d) => `<li>${esc(d)}</li>`).join("")}</ul></div>` : ""}

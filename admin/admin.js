@@ -225,6 +225,7 @@ function productForm(m, onDone = shell) {
           <button data-m="${i}:-1">←</button><button data-m="${i}:x">✕</button><button data-m="${i}:1">→</button></div></figure>`).join("")}</div>
         <input type="file" id="files" accept="image/*" multiple></div>
       <div class="card"><label>Sizes (comma separated, leave empty if not applicable)<input type="text" id="sizes" value="${esc(p.sizes.join(", "))}"></label>
+        <div id="sizeout">${p.sizes.length ? `<div class="muted">Tick a size to show it as unavailable (crossed out, can't be chosen):</div>` + p.sizes.map((s) => `<label class="check"><input type="checkbox" data-out="${esc(s)}" ${(p.sizes_out || []).includes(s) ? "checked" : ""}> ${esc(s)} — unavailable</label>`).join("") : ""}</div>
         <div><b>Colours</b><p class="muted">Add photos to a colour and the product page switches to them when that colour is chosen.</p><div id="cols" style="margin-top:8px">${p.colors.map((c, i) => `<div style="margin-bottom:14px"><div class="colorrow"><input type="color" data-ch="${i}" value="${esc(c.hex)}"><input type="text" data-cn="${i}" value="${esc(c.name)}" placeholder="Colour name"><button class="btn sm danger" data-cd="${i}">✕</button></div>
           <div class="imgs">${(c.images || []).map((u, j) => `<figure><img src="${esc(u)}" alt=""><div class="acts"><button data-cm="${i}:${j}:-1">←</button><button data-cm="${i}:${j}:x">✕</button><button data-cm="${i}:${j}:1">→</button></div></figure>`).join("")}</div>
           <input type="file" data-cf="${i}" accept="image/*" multiple></div>`).join("")}</div>
@@ -245,11 +246,14 @@ function productForm(m, onDone = shell) {
     p.sale_label = $("#slabel").value.trim();
     p.description = $("#desc").value; p.details = $("#details").value;
     p.sizes = $("#sizes").value.split(",").map((s) => s.trim()).filter(Boolean);
+    const ticked = [...document.querySelectorAll("[data-out]")].filter((el) => el.checked).map((el) => el.dataset.out);
+    p.sizes_out = ticked.filter((s) => p.sizes.includes(s));
     p.colors = [...document.querySelectorAll("[data-ch]")].map((el, i) => ({ hex: el.value, name: document.querySelector(`[data-cn="${i}"]`).value.trim() || "Colour", images: p.colors[i]?.images || [] }));
     p.in_stock = $("#stock").checked; p.featured = $("#feat").checked; p.active = $("#active").checked;
   };
   const wire = () => {
     $("#back").onclick = () => { editing = null; onDone(); };
+    $("#sizes").onchange = () => { collect(); draw(); };
     $("#addcol").onclick = () => { collect(); p.colors.push({ name: "", hex: "#d9a9a6" }); draw(); };
     m.onclick = (e) => {
       const d = e.target.dataset;
@@ -289,7 +293,7 @@ function productForm(m, onDone = shell) {
       const row = {
         name: p.name, category_id: p.category_id, price: p.price, sale_price: p.sale_price, sale_label: p.sale_label || null,
         description: p.description, details: p.details,
-        images: p.images, sizes: p.sizes, colors: p.colors, in_stock: p.in_stock, featured: p.featured, active: p.active, sort: p.sort,
+        images: p.images, sizes: p.sizes, sizes_out: p.sizes_out || [], colors: p.colors, in_stock: p.in_stock, featured: p.featured, active: p.active, sort: p.sort,
       };
       const res = p._new ? await rpc("POST", "/api/admin/products", row) : await rpc("PUT", `/api/admin/products/${p.id}`, row);
       if (res.error) return toast(res.error.message, true);

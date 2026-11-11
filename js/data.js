@@ -38,7 +38,7 @@ async function getCategories() {
 }
 
 function norm(p) {
-  return { ...p, images: p.images || [], sizes: p.sizes || [], colors: p.colors || [] };
+  return { ...p, images: p.images || [], sizes: p.sizes || [], sizes_out: p.sizes_out || [], colors: p.colors || [] };
 }
 
 async function getProducts() {

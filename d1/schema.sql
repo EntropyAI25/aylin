@@ -28,6 +28,7 @@ create table if not exists products (
   details text default '',
   images text not null default '[]',   -- JSON array of URLs
   sizes text not null default '[]',    -- JSON array of strings
+  sizes_out text not null default '[]', -- JSON array of sizes shown as unavailable
   colors text not null default '[]',   -- JSON array of { name, hex, images[] }
   in_stock integer not null default 1,
   featured integer not null default 0,
