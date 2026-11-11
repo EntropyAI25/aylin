@@ -224,8 +224,8 @@ function productForm(m, onDone = shell) {
         <div class="imgs">${p.images.map((u, i) => `<figure><img src="${esc(u)}" alt=""><div class="acts">
           <button data-m="${i}:-1">←</button><button data-m="${i}:x">✕</button><button data-m="${i}:1">→</button></div></figure>`).join("")}</div>
         <input type="file" id="files" accept="image/*" multiple></div>
-      <div class="card"><label>Sizes (comma separated, leave empty if not applicable)<input type="text" id="sizes" value="${esc(p.sizes.join(", "))}"></label>
-        <div id="sizeout">${p.sizes.length ? `<div class="muted">Tick a size to show it as unavailable (crossed out, can't be chosen):</div>` + p.sizes.map((s) => `<label class="check"><input type="checkbox" data-out="${esc(s)}" ${(p.sizes_out || []).includes(s) ? "checked" : ""}> ${esc(s)} — unavailable</label>`).join("") : ""}</div>
+      <div class="card"><div><b>Sizes</b><p class="muted">Add sizes one by one and mark each as in stock or out of stock. Out of stock sizes show crossed out on the website.</p><div id="szs" style="margin-top:8px">${p.sizes.map((s, i) => `<div class="colorrow"><input type="text" data-sn="${i}" value="${esc(s)}" placeholder="Size, e.g. M"><select data-ss="${i}"><option value="in">In stock</option><option value="out" ${(p.sizes_out || []).includes(s) ? "selected" : ""}>Out of stock</option></select><button class="btn sm danger" data-sd="${i}">✕</button></div>`).join("")}</div>
+          <button class="btn sm ghost" id="addsize">+ Add size</button></div>
         <div><b>Colours</b><p class="muted">Add photos to a colour and the product page switches to them when that colour is chosen.</p><div id="cols" style="margin-top:8px">${p.colors.map((c, i) => `<div style="margin-bottom:14px"><div class="colorrow"><input type="color" data-ch="${i}" value="${esc(c.hex)}"><input type="text" data-cn="${i}" value="${esc(c.name)}" placeholder="Colour name"><button class="btn sm danger" data-cd="${i}">✕</button></div>
           <div class="imgs">${(c.images || []).map((u, j) => `<figure><img src="${esc(u)}" alt=""><div class="acts"><button data-cm="${i}:${j}:-1">←</button><button data-cm="${i}:${j}:x">✕</button><button data-cm="${i}:${j}:1">→</button></div></figure>`).join("")}</div>
           <input type="file" data-cf="${i}" accept="image/*" multiple></div>`).join("")}</div>
@@ -245,18 +245,18 @@ function productForm(m, onDone = shell) {
     p.price = +$("#price").value || 0; p.sale_price = $("#sale").value === "" ? null : +$("#sale").value;
     p.sale_label = $("#slabel").value.trim();
     p.description = $("#desc").value; p.details = $("#details").value;
-    p.sizes = $("#sizes").value.split(",").map((s) => s.trim()).filter(Boolean);
-    const ticked = [...document.querySelectorAll("[data-out]")].filter((el) => el.checked).map((el) => el.dataset.out);
-    p.sizes_out = ticked.filter((s) => p.sizes.includes(s));
+    const rows = [...document.querySelectorAll("[data-sn]")].map((el, i) => ({ n: el.value.trim(), out: document.querySelector(`[data-ss="${i}"]`).value === "out" })).filter((r) => r.n);
+    p.sizes = rows.map((r) => r.n); p.sizes_out = rows.filter((r) => r.out).map((r) => r.n);
     p.colors = [...document.querySelectorAll("[data-ch]")].map((el, i) => ({ hex: el.value, name: document.querySelector(`[data-cn="${i}"]`).value.trim() || "Colour", images: p.colors[i]?.images || [] }));
     p.in_stock = $("#stock").checked; p.featured = $("#feat").checked; p.active = $("#active").checked;
   };
   const wire = () => {
     $("#back").onclick = () => { editing = null; onDone(); };
-    $("#sizes").onchange = () => { collect(); draw(); };
+    $("#addsize").onclick = () => { collect(); p.sizes.push(""); draw(); document.querySelectorAll("[data-sn]")[p.sizes.length - 1]?.focus(); };
     $("#addcol").onclick = () => { collect(); p.colors.push({ name: "", hex: "#d9a9a6" }); draw(); };
     m.onclick = (e) => {
       const d = e.target.dataset;
+      if (d.sd !== undefined) { collect(); p.sizes.splice(+d.sd, 1); draw(); }
       if (d.cd !== undefined) { collect(); p.colors.splice(+d.cd, 1); draw(); }
       if (d.cm) {
         collect(); const [ci, j, a] = d.cm.split(":"); const arr = p.colors[+ci].images; const idx = +j;
