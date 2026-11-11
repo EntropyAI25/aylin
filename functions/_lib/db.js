@@ -31,6 +31,7 @@ export function toProduct(row) {
 
 // Only these fields can be written from the admin. Values are already in D1 form.
 export function productRow(body) {
+  const sizes = body.sizes ?? [], out = body.sizes_out ?? [];
   return {
     name: String(body.name ?? "").trim(),
     category_id: body.category_id || null,
@@ -44,7 +45,7 @@ export function productRow(body) {
     sizes: JSON.stringify(body.sizes ?? []),
     sizes_out: JSON.stringify(body.sizes_out ?? []),
     colors: JSON.stringify(body.colors ?? []),
-    in_stock: body.in_stock ? 1 : 0,
+    in_stock: body.in_stock && !(sizes.length && sizes.every((s) => out.includes(s))) ? 1 : 0,
     featured: body.featured ? 1 : 0,
     active: body.active ? 1 : 0,
     sort: Number(body.sort) || 0,

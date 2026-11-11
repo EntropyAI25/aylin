@@ -252,6 +252,11 @@ function productForm(m, onDone = shell) {
   };
   const wire = () => {
     $("#back").onclick = () => { editing = null; onDone(); };
+    const syncStock = () => {
+      const rows = [...document.querySelectorAll("[data-sn]")].map((el, i) => ({ n: el.value.trim(), out: document.querySelector(`[data-ss="${i}"]`).value === "out" })).filter((r) => r.n);
+      if (rows.length && rows.every((r) => r.out)) $("#stock").checked = false;
+    };
+    document.querySelectorAll("[data-ss]").forEach((el) => el.onchange = syncStock);
     $("#addsize").onclick = () => { collect(); p.sizes.push(""); draw(); document.querySelectorAll("[data-sn]")[p.sizes.length - 1]?.focus(); };
     $("#addcol").onclick = () => { collect(); p.colors.push({ name: "", hex: "#d9a9a6" }); draw(); };
     m.onclick = (e) => {
