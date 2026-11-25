@@ -68,7 +68,7 @@ function layout(cats) {
   const footer = `
     <footer class="site"><div class="wrap">
       <div class="foot">
-        <div${ed("site")}><span class="booti" aria-hidden="true" style="color:var(--accent)"></span><p style="color:var(--muted)">${esc(S.site.tagline)}</p></div>
+        <div${ed("site")}><span class="emblem" aria-hidden="true" style="color:var(--accent)"></span><p style="color:var(--muted)">${esc(S.site.tagline)}</p></div>
         <div><h4>Help</h4><ul>
           <li><a href="/shipping">Shipping</a></li>
           <li><a href="/returns">Returns &amp; exchanges</a></li>
@@ -98,7 +98,7 @@ const lookVars = (l) => (l ? `--tl:${l.tl};--td:${l.td};--acc:${l.acc}` : "--tl:
 const sizesFree = (p) => p.sizes.filter((s) => !p.sizes_out.includes(s));
 const productUrl = (p) => `/product/${encodeURIComponent(p.slug)}`;
 const sizeButtons = (p) => p.sizes.map((s) => `<button type="button" class="size${p.sizes_out.includes(s) ? " out" : ""}" data-s="${esc(s)}"${p.sizes_out.includes(s) ? ` disabled title="Currently unavailable"` : ""}>${esc(s)}</button>`).join("");
-const booti = `<span class="booti" aria-hidden="true"></span>`;
+const emblem = `<span class="emblem" aria-hidden="true"></span>`;
 const featuredFirst = (list) => [...list].sort((a, b) => b.featured - a.featured);
 
 function orderMessage(p, size, colour) {
@@ -147,7 +147,7 @@ function heroHtml(products) {
   const lines = h.title.split(/(?<=[.!?])\s+/).filter(Boolean);
   return `
   <section class="studio look" style="${lookVars(lookOf(list[0]))}"${ed("hero")}>
-    ${[8, 31, 57, 78, 93].map((x, i) => `<span class="booti petal" aria-hidden="true" style="left:${x}%;animation-delay:${i * 3.1}s"></span>`).join("")}
+    ${[8, 31, 57, 78, 93].map((x, i) => `<span class="emblem petal" aria-hidden="true" style="left:${x}%;animation-delay:${i * 3.1}s"></span>`).join("")}
     <div class="wrap studio-in">
       <div class="studio-copy">
         <span class="eyebrow">${esc(h.eyebrow)}</span>
@@ -159,7 +159,7 @@ function heroHtml(products) {
       </div>
       <div class="stage">
         <div class="rail"></div>
-        <span class="booti behind" aria-hidden="true"></span>
+        <span class="emblem behind" aria-hidden="true"></span>
         ${list.map((p, i) => {
           const l = lookOf(p), at = i < 2 ? "src" : "data-src";
           return `<div class="hang${l ? "" : " photo"}">${l
@@ -178,7 +178,7 @@ function stackHtml(products) {
   if (!list.length) return "";
   return `
   <section class="wrap">
-    <div class="stack-head rv">${booti}<span class="eyebrow">The collection</span><h2>Pick your colour</h2></div>
+    <div class="stack-head rv">${emblem}<span class="eyebrow">The collection</span><h2>Pick your colour</h2></div>
     <div class="stack">${list.map((p, i) => {
       const l = lookOf(p), second = l ? l.detail : p.images?.[1] || img(p);
       return `<article class="stack-card look" style="--i:${i};${lookVars(l)}" data-id="${esc(p.id)}"><div class="stack-body"${ed("product", "", p.id)}>
@@ -219,7 +219,7 @@ function wireStack(products) {
 
 function home(cats, products) {
   const words = [S.site.tagline, "Kashmiri embroidery", "A legacy of 120+ years", "Order on WhatsApp"];
-  const run = words.map((w) => `<span>${esc(w)}${booti}</span>`).join("");
+  const run = words.map((w) => `<span>${esc(w)}${emblem}</span>`).join("");
   $("#app").innerHTML = `
   ${heroHtml(products)}
   <div class="ticker" aria-hidden="true"><div>${run}${run}${run}${run}</div></div>
@@ -232,7 +232,7 @@ function home(cats, products) {
     <p class="center"><a class="btn ghost" href="/about">Read the full story</a></p>
   </div></section>
   <section class="section alt"><div class="wrap promises">
-    ${S.values.items.map((v, i) => `<div class="rv"${ed("values", `items.${i}.`)}>${booti}<h3>${esc(v.title)}</h3><p>${esc(v.text)}</p></div>`).join("")}
+    ${S.values.items.map((v, i) => `<div class="rv"${ed("values", `items.${i}.`)}>${emblem}<h3>${esc(v.title)}</h3><p>${esc(v.text)}</p></div>`).join("")}
   </div></section>`;
   document.title = `${S.site.name} · ${S.site.tagline}`;
   wireStack(products);
@@ -243,7 +243,7 @@ function shop(cats, products) {
   const cat = cats.find((c) => c.slug === params.get("cat"));
   const list = cat ? products.filter((p) => p.category_id === cat.id) : products;
   $("#app").innerHTML = `<div class="wrap">
-    <div class="page-head">${booti}<span class="eyebrow">The collection</span><h1>${esc(cat ? cat.name : "Shop")}</h1></div>
+    <div class="page-head">${emblem}<span class="eyebrow">The collection</span><h1>${esc(cat ? cat.name : "Shop")}</h1></div>
     ${list.length || EDIT ? `<div class="grid spot">${list.map(card).join("")}${EDIT ? `<div class="card"${ed("newproduct")} style="align-self:start;aspect-ratio:3/4;border:2px dashed #b5838a;border-radius:6px;display:grid;place-items:center;text-align:center;color:#b5838a;font-size:20px;cursor:pointer">＋ Add product</div>` : ""}</div>` : `<p class="empty">Nothing here yet. Check back soon.</p>`}
     <div style="height:80px"></div></div>`;
   document.title = `${cat ? cat.name : "Shop"} · ${S.site.name}`;

@@ -13,21 +13,17 @@
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='14'%3E%3Cpath d='M0 10h5c3 0 3-1 3-3s0-4 3-4h10c3 0 3 2 3 4s0 3 3 3h5' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x center / 32px 14px;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='14'%3E%3Cpath d='M0 10h5c3 0 3-1 3-3s0-4 3-4h10c3 0 3 2 3 4s0 3 3 3h5' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x center / 32px 14px;
 }
-.booti {
-  display: inline-block; width: 26px; height: 40px; background: currentColor;
-  -webkit-mask: url("/assets/booti.png") no-repeat center / contain; mask: url("/assets/booti.png") no-repeat center / contain;
+.emblem {
+  display: inline-block; width: 44px; height: 44px; background: currentColor;
+  -webkit-mask: url("/assets/logo-mark-mask.png") no-repeat center / contain; mask: url("/assets/logo-mark-mask.png") no-repeat center / contain;
 }
 
 /* ---------- Intro ---------- */
 .intro { position: fixed; inset: 0; z-index: 200; display: grid; place-content: center; justify-items: center; gap: 22px; background: var(--bg); cursor: pointer; transition: clip-path .6s cubic-bezier(.7,0,.2,1); clip-path: inset(0 0 0 0); }
 .intro.go { clip-path: inset(0 0 100% 0); pointer-events: none; }
-.intro svg { width: 120px; height: 150px; fill: none; stroke: #9c3f54; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-[data-theme="midnight"] .intro svg { stroke: var(--gold); }
-.intro path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: stitch .75s ease forwards; }
-.intro path:nth-of-type(n+2) { animation-delay: .22s; }
-.intro path:nth-of-type(n+6) { animation-delay: .45s; }
-.intro path:last-of-type { animation-delay: .6s; }
-@keyframes stitch { to { stroke-dashoffset: 0; } }
+.intro-logo { width: 150px; height: auto; filter: brightness(.55) saturate(.8); animation: logoIn 1s cubic-bezier(.4,0,.2,1) both; }
+[data-theme="midnight"] .intro-logo { filter: none; }
+@keyframes logoIn { from { clip-path: inset(100% 0 0 0); transform: scale(.9); } to { clip-path: inset(0 0 0 0); transform: none; } }
 .intro-name { display: flex; font: 300 46px/1 "Cormorant Garamond", serif; letter-spacing: .4em; padding-left: .4em; }
 .intro-name span { opacity: 0; transform: translateY(18px); animation: letter .5s ease forwards; animation-delay: calc(.55s + var(--i) * .13s); }
 @keyframes letter { to { opacity: 1; transform: none; } }
@@ -83,7 +79,7 @@
 .lens { position: absolute; z-index: 2; width: 220px; height: 220px; border-radius: 50%; border: 4px solid #cdb077; background-repeat: no-repeat; background-color: var(--tone); box-shadow: 0 18px 40px rgba(20,8,8,.35); opacity: 0; transform: scale(.6); transition: opacity .2s, transform .2s; pointer-events: none; }
 .stage.looking { cursor: none; }
 .stage.looking .lens { opacity: 1; transform: none; }
-.petal { position: absolute; width: 18px; height: 28px; color: var(--acc); opacity: 0; animation: drift 16s linear infinite; pointer-events: none; }
+.petal { position: absolute; width: 28px; height: 28px; color: var(--acc); opacity: 0; animation: drift 16s linear infinite; pointer-events: none; }
 [data-theme="midnight"] .petal { color: var(--gold); }
 @keyframes drift { 0% { transform: translate(0, -60px) rotate(0); opacity: 0; } 12%, 80% { opacity: .3; } 100% { transform: translate(90px, 92svh) rotate(280deg); opacity: 0; } }
 
@@ -107,12 +103,12 @@
 .ticker { overflow: hidden; background: var(--announce-bg); color: var(--announce-ink); padding: 14px 0; white-space: nowrap; }
 .ticker > div { display: inline-flex; animation: tick 32s linear infinite; }
 .ticker span { display: inline-flex; align-items: center; gap: 34px; padding-right: 34px; font: italic 300 24px/1.2 "Cormorant Garamond", serif; letter-spacing: .04em; }
-.ticker .booti { width: 13px; height: 20px; color: #d8b980; }
+.ticker .emblem { width: 26px; height: 26px; color: #d8b980; }
 @keyframes tick { to { transform: translateX(-50%); } }
 
 /* ---------- Stacking collection ---------- */
 .stack-head { text-align: center; display: grid; gap: 8px; justify-items: center; padding: clamp(56px, 8vw, 100px) 0 36px; }
-.stack-head .booti { color: var(--accent); }
+.stack-head .emblem { color: var(--accent); }
 .stack { display: grid; gap: 8vh; padding-bottom: 40px; }
 .stack-card { position: sticky; top: calc(86px + var(--i) * 9px); height: min(640px, calc(100svh - 150px)); min-height: 460px; }
 .stack-body { height: 100%; display: grid; grid-template-columns: 1fr 1.15fr 1fr; grid-template-rows: minmax(0, 1fr); border-radius: 22px; overflow: hidden; background: var(--card); box-shadow: 0 -10px 40px rgba(40,15,20,.16); transform-origin: 50% 0; border: 1px solid var(--line); }
@@ -175,8 +171,8 @@
 .promises { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
 .promises > div { padding: 8px 30px; display: grid; gap: 10px; justify-items: center; align-content: start; }
 .promises > div + div { border-left: 1px solid var(--line); }
-.promises .booti { color: var(--accent); transition: transform .5s; }
-.promises > div:hover .booti { transform: rotate(-12deg) scale(1.2); }
+.promises .emblem { color: var(--accent); transition: transform .5s; }
+.promises > div:hover .emblem { transform: rotate(-12deg) scale(1.2); }
 .promises p { color: var(--muted); }
 @media (max-width: 800px) { .promises { grid-template-columns: 1fr; gap: 34px; } .promises > div + div { border-left: 0; } }
 
@@ -234,7 +230,7 @@ footer.site { overflow: hidden; }
 .wordmark span { display: inline-block; transition: transform .4s cubic-bezier(.2,.8,.2,1), color .3s; }
 .wordmark span:hover { transform: translateY(-.08em) rotate(-4deg); color: var(--accent); }
 .wordmark + .legal { margin-top: 18px; }
-.page-head .booti { justify-self: center; color: var(--accent); }
+.page-head .emblem { justify-self: center; color: var(--accent); }
 
 /* ---------- Reveal ---------- */
 .rv { opacity: 0; transform: translateY(26px); transition: opacity .8s, transform .8s cubic-bezier(.2,.8,.2,1); }

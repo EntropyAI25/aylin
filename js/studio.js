@@ -22,23 +22,13 @@ const Studio = (() => {
     run();
   };
 
-  /* ---------- Intro: a motif is stitched, then the name arrives letter by letter ---------- */
+  /* ---------- Intro: the logo appears, then the name arrives letter by letter ---------- */
   function intro(name) {
     try { if (sessionStorage.getItem("aylin-intro")) return; sessionStorage.setItem("aylin-intro", "1"); } catch (e) { return; }
     if (reduce) return;
-    const petals = (cx, cy, r) => [0, 60, 120, 180, 240, 300]
-      .map((a) => `<path pathLength="1" transform="rotate(${a} ${cx} ${cy})" d="M${cx} ${cy}c-${r * .55} -${r * .35} -${r * .5} -${r} 0 -${r}s${r * .55} ${r * .65} 0 ${r}z"/>`).join("");
     const el = document.createElement("div");
     el.className = "intro";
-    el.innerHTML = `<svg viewBox="0 0 160 200" aria-hidden="true">
-        <path pathLength="1" d="M80 192C78 160 82 128 80 82"/>
-        <path pathLength="1" d="M80 82C52 66 62 34 80 8c18 26 28 58 0 74z"/>
-        <path pathLength="1" d="M80 84C66 62 40 58 24 66c10 20 32 30 56 18z"/>
-        <path pathLength="1" d="M80 84c14-22 40-26 56-18-10 20-32 30-56 18z"/>
-        <path pathLength="1" d="M80 128C66 122 54 116 46 108M80 128c14-6 26-12 34-20"/>
-        ${petals(42, 105, 24)}${petals(118, 105, 24)}
-        <path pathLength="1" d="M80 164c-18 4-36-4-44-18 20-4 36 2 44 18zM80 164c18 4 36-4 44-18-20-4-36 2-44 18z"/>
-      </svg>
+    el.innerHTML = `<img class="intro-logo" src="/assets/logo-mark.png" alt="">
       <div class="intro-name" aria-label="${name.replace(/"/g, "")}">${[...name].map((c, i) => `<span style="--i:${i}">${c === "<" ? "" : c}</span>`).join("")}</div>
       <button type="button" class="intro-skip">Skip</button>`;
     document.body.append(el);
