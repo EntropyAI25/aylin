@@ -178,7 +178,7 @@ function stackHtml(products) {
   if (!list.length) return "";
   return `
   <section class="wrap">
-    <div class="stack-head rv">${emblem}<span class="eyebrow">The collection</span><h2>Pick your colour</h2></div>
+    <div class="stack-head rv">${emblem}<span class="eyebrow">Myoon Zoon Collection</span><h2>Pick your colour</h2></div>
     <div class="stack">${list.map((p, i) => {
       const l = lookOf(p), second = l ? l.detail : p.images?.[1] || img(p);
       return `<article class="stack-card look" style="--i:${i};${lookVars(l)}" data-id="${esc(p.id)}"><div class="stack-body"${ed("product", "", p.id)}>
@@ -243,7 +243,7 @@ function shop(cats, products) {
   const cat = cats.find((c) => c.slug === params.get("cat"));
   const list = cat ? products.filter((p) => p.category_id === cat.id) : products;
   $("#app").innerHTML = `<div class="wrap">
-    <div class="page-head">${emblem}<span class="eyebrow">The collection</span><h1>${esc(cat ? cat.name : "Shop")}</h1></div>
+    <div class="page-head">${emblem}<span class="eyebrow">Myoon Zoon Collection</span><h1>${esc(cat ? cat.name : "Shop")}</h1></div>
     ${list.length || EDIT ? `<div class="grid spot">${list.map(card).join("")}${EDIT ? `<div class="card"${ed("newproduct")} style="align-self:start;aspect-ratio:3/4;border:2px dashed #b5838a;border-radius:6px;display:grid;place-items:center;text-align:center;color:#b5838a;font-size:20px;cursor:pointer">＋ Add product</div>` : ""}</div>` : `<p class="empty">Nothing here yet. Check back soon.</p>`}
     <div style="height:80px"></div></div>`;
   document.title = `${cat ? cat.name : "Shop"} · ${S.site.name}`;
