@@ -29,9 +29,17 @@ const DEFAULT_SETTINGS = {
     ],
   },
   story: {
-    title: "Our story",
-    text: "AYLIN is a love letter to Kashmir: its quiet mornings, its colours, its craft. We reimagine heritage into pieces you will reach for again and again.",
+    title: "A legacy of 120+ years",
+    text: "A new expression of Kashmir. Heritage that finds a new rhythm and becomes part of modern everyday life.",
     image: "",
+  },
+  journey: {
+    items: [
+      { mark: "120+", title: "Years of craft", text: "Our family has been connected to the world of Kashmiri craftsmanship for over 120 years." },
+      { mark: "4th", title: "Generation", text: "A heritage shaped by tradition, artistry and skilled hands, now taken a little further." },
+      { mark: "Then", title: "From law to AYLIN", text: "A career in law set aside, to celebrate our roots and bring Kashmiri craft to a new generation." },
+      { mark: "Today", title: "Worn, not just remembered", text: "Thoughtfully designed kurtis and kaftans, with simplicity, elegance and modern modest style." },
+    ],
   },
   about: {
     title: "Kashmir, Reimagined",
