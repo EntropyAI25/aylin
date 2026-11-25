@@ -124,6 +124,9 @@
 .stack-detail { position: relative; min-height: 0; overflow: hidden; }
 .stack-detail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s cubic-bezier(.2,.8,.2,1); }
 .stack-detail:hover img { transform: scale(1.18); }
+.stack-detail.whole { background: var(--tone); }
+.stack-detail.whole img { object-fit: contain; object-position: 50% 100%; padding: 14px 8px 0; transform-origin: 50% 100%; }
+.stack-detail.whole:hover img { transform: scale(1.05); }
 .stack-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .stack-actions .btn { padding: 12px 22px; }
 .link { font-size: 12px; letter-spacing: .2em; text-transform: uppercase; border-bottom: 1px solid currentColor; padding-bottom: 2px; }
@@ -140,6 +143,7 @@
   .stack-text { grid-row: 2; padding: 16px 18px 20px; gap: 9px; }
   .stack-text p, .stack-text .num { display: none; }
   .stack-text h3 { font-size: 26px; }
+  .stack-detail.whole img { object-fit: cover; object-position: 50% 35%; padding: 0; }
   .stack-detail { position: absolute; top: 14px; right: 14px; width: 92px; height: 92px; border-radius: 50%; border: 3px solid #cdb077; z-index: 2; }
 }
 
@@ -179,6 +183,7 @@
 .card .thumb img { position: absolute; inset: 0; transition: opacity .5s, transform .8s cubic-bezier(.2,.8,.2,1); }
 .card .thumb img.cut { inset: 13% 6% 5%; width: 88%; height: 82%; object-fit: contain; filter: drop-shadow(0 14px 14px rgba(35,15,15,.28)); }
 .card .thumb img.close { object-fit: cover; opacity: 0; transform: scale(1.12); }
+.card .thumb img.close.whole { inset: 12% 0 0; width: 100%; height: 88%; object-fit: contain; object-position: 50% 100%; transform: scale(.94); transform-origin: 50% 100%; }
 .card .thumb .badge { top: auto; left: 50%; bottom: 10px; transform: translateX(-50%); white-space: nowrap; z-index: 1; }
 .card:hover .thumb, .card:focus-visible .thumb, .card.peek .thumb { transform: translateY(-6px); box-shadow: 0 22px 40px rgba(50,20,30,.2); }
 .card:hover .thumb img.close, .card:focus-visible .thumb img.close, .card.peek .thumb img.close { opacity: 1; transform: none; }
@@ -197,6 +202,8 @@
 .gallery .main { position: relative; aspect-ratio: 4/5; border-radius: 18px; background: var(--tone, var(--bg-alt)); transition: background .6s; }
 .gallery .main img { transition: transform .35s ease; }
 .gallery .main.cut img { object-fit: contain; padding: 5%; filter: drop-shadow(0 20px 22px rgba(35,15,15,.28)); }
+/* close-up: the whole photo, resting on the bottom edge of the frame */
+.gallery .main.cut.whole img { padding: 3% 0 0; object-position: 50% 100%; filter: none; }
 .gallery .main.zoom { cursor: zoom-in; }
 .gallery .main.zoom.zooming img { transform: scale(2.2); }
 .thumbs button { aspect-ratio: 4/5; border-radius: 10px; background: var(--tone, var(--bg-alt)); }

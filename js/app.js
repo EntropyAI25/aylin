@@ -121,7 +121,7 @@ const card = (p) => {
   const l = lookOf(p);
   const second = l ? l.detail : p.images?.[1];
   return `<a class="card rv look" style="${lookVars(l)}" href="${productUrl(p)}"${ed("product", "", p.id)}>
-    <div class="thumb">${second ? `<img class="close" loading="lazy" src="${esc(second)}" alt="">` : ""}<img class="${l ? "cut" : "front"}" loading="lazy" src="${esc(l ? l.front : img(p))}" alt="${esc(p.name)}">
+    <div class="thumb">${second ? `<img class="close${l ? " whole" : ""}" loading="lazy" src="${esc(second)}" alt="">` : ""}<img class="${l ? "cut" : "front"}" loading="lazy" src="${esc(l ? l.front : img(p))}" alt="${esc(p.name)}">
       ${!p.in_stock ? `<span class="badge out">Sold out</span>` : onSale ? `<span class="badge">${pct(p)}% off</span>` : ""}</div>
     <div class="meta"><h3>${esc(p.name)}</h3>
       <div class="price">${priceHtml(p)}</div>
@@ -192,7 +192,7 @@ function stackHtml(products) {
           <div class="stack-actions">${p.in_stock ? `<button type="button" class="btn wa" data-order>Order on WhatsApp</button>` : `<button type="button" class="btn" disabled>Sold out</button>`}<a class="link" href="${productUrl(p)}">Details</a></div>
         </div>
         <a class="stack-art${l ? "" : " photo"}" href="${productUrl(p)}" aria-label="${esc(p.name)}"><img loading="lazy" src="${esc(l ? l.front : img(p))}" alt="${esc(p.name)}"></a>
-        <a class="stack-detail" href="${productUrl(p)}" tabindex="-1" aria-hidden="true"><img loading="lazy" src="${esc(second)}" alt=""></a>
+        <a class="stack-detail${l ? " whole" : ""}" href="${productUrl(p)}" tabindex="-1" aria-hidden="true"><img loading="lazy" src="${esc(second)}" alt=""></a>
       </div></article>`;
     }).join("")}</div>
     <p class="center" style="padding:24px 0 0"><a class="btn ghost" href="/shop">See everything</a></p>
@@ -258,7 +258,7 @@ async function product(cats, products) {
   const l = lookOf(p);
   const shots = (list) => list.map((u) => ({ src: u }));
   // With studio artwork: cut-out front, close-up, cut-out side and back, then any extra uploads.
-  const studio = () => [{ src: l.front, cut: true }, { src: l.detail }, { src: l.side, cut: true }, { src: l.back, cut: true }, ...shots(p.images.slice(4))];
+  const studio = () => [{ src: l.front, cut: true }, { src: l.detail, cut: true, whole: true }, { src: l.side, cut: true }, { src: l.back, cut: true }, ...shots(p.images.slice(4))];
   const colourShots = p.colors.find((c) => c.images?.length)?.images;
   let gal = colourShots ? shots(colourShots) : l ? studio() : shots(p.images.length ? p.images : [img(p)]); // gallery follows the chosen colour
   const wanted = params.get("size");
@@ -295,6 +295,7 @@ async function product(cats, products) {
     cur = i;
     $("#main").src = gal[cur]?.src || img(p);
     frame.classList.toggle("cut", !!gal[cur]?.cut);
+    frame.classList.toggle("whole", !!gal[cur]?.whole);
     document.querySelectorAll("#thumbs button").forEach((x, n) => x.classList.toggle("on", n === cur));
   };
   const drawThumbs = () => {

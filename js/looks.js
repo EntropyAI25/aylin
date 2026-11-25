@@ -4,7 +4,7 @@
 // tl = background in the light theme, td = background in the dark theme, acc = thread colour.
 const LOOKS = (() => {
   const look = (file, tl, td, acc) => ({
-    front: `/assets/cut/${file}-front.webp?v=2`, side: `/assets/cut/${file}-side.webp?v=2`, back: `/assets/cut/${file}-back.webp?v=2`, detail: `/assets/detail/${file}.webp?v=2`, tl, td, acc,
+    front: `/assets/cut/${file}-front.webp?v=2`, side: `/assets/cut/${file}-side.webp?v=2`, back: `/assets/cut/${file}-back.webp?v=2`, detail: `/assets/detail/${file}.webp?v=3`, tl, td, acc,
   });
   return {
     "/media/1793884858284-30351f3b.png": look("ruby-red-kaftan", "#f4d3cc", "#3b1016", "#a8111f"),
