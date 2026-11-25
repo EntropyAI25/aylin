@@ -257,8 +257,8 @@ async function product(cats, products) {
   const onSale = p.sale_price && p.sale_price < p.price;
   const l = lookOf(p);
   const shots = (list) => list.map((u) => ({ src: u }));
-  // With studio artwork: cut-out front, close-up, side, cut-out back, then any extra uploads.
-  const studio = () => [{ src: l.front, cut: true }, ...shots(p.images.slice(1, 3)), { src: l.back, cut: true }, ...shots(p.images.slice(4))];
+  // With studio artwork: cut-out front, close-up, cut-out side and back, then any extra uploads.
+  const studio = () => [{ src: l.front, cut: true }, { src: l.detail }, { src: l.side, cut: true }, { src: l.back, cut: true }, ...shots(p.images.slice(4))];
   const colourShots = p.colors.find((c) => c.images?.length)?.images;
   let gal = colourShots ? shots(colourShots) : l ? studio() : shots(p.images.length ? p.images : [img(p)]); // gallery follows the chosen colour
   const wanted = params.get("size");

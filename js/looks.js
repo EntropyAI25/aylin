@@ -1,10 +1,10 @@
-// Studio artwork for products: cut-out front/back, an embroidery close-up and a colour pairing.
+// Studio artwork for products: cut-out front/side/back, an embroidery close-up and a colour pairing.
 // Keyed by the product's COVER PHOTO. If the cover is changed in /admin, or a new product is added,
 // there is no entry for it and the site simply shows the uploaded photos instead.
 // tl = background in the light theme, td = background in the dark theme, acc = thread colour.
 const LOOKS = (() => {
   const look = (file, tl, td, acc) => ({
-    front: `/assets/cut/${file}-front.webp`, back: `/assets/cut/${file}-back.webp`, detail: `/assets/detail/${file}.webp`, tl, td, acc,
+    front: `/assets/cut/${file}-front.webp?v=2`, side: `/assets/cut/${file}-side.webp?v=2`, back: `/assets/cut/${file}-back.webp?v=2`, detail: `/assets/detail/${file}.webp?v=2`, tl, td, acc,
   });
   return {
     "/media/1793884858284-30351f3b.png": look("ruby-red-kaftan", "#f4d3cc", "#3b1016", "#a8111f"),
