@@ -232,7 +232,7 @@ function home(cats, products) {
     <p class="center"><a class="btn ghost" href="/about">Read the full story</a></p>
   </div></section>
   <section class="section alt"><div class="wrap promises">
-    ${S.values.items.map((v, i) => `<div class="rv"${ed("values", `items.${i}.`)}>${emblem}<h3>${esc(v.title)}</h3><p>${esc(v.text)}</p></div>`).join("")}
+    ${S.values.items.map((v, i) => `<div class="rv"${ed("values", `items.${i}.`)}><h3>${esc(v.title)}</h3><p>${esc(v.text)}</p></div>`).join("")}
   </div></section>`;
   document.title = `${S.site.name} · ${S.site.tagline}`;
   wireStack(products);

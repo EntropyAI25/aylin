@@ -171,8 +171,6 @@
 .promises { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
 .promises > div { padding: 8px 30px; display: grid; gap: 10px; justify-items: center; align-content: start; }
 .promises > div + div { border-left: 1px solid var(--line); }
-.promises .emblem { color: var(--accent); transition: transform .5s; }
-.promises > div:hover .emblem { transform: rotate(-12deg) scale(1.2); }
 .promises p { color: var(--muted); }
 @media (max-width: 800px) { .promises { grid-template-columns: 1fr; gap: 34px; } .promises > div + div { border-left: 0; } }
 
