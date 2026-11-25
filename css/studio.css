@@ -40,13 +40,13 @@
 .studio-in { position: relative; display: grid; grid-template-columns: 1.05fr 1fr; gap: 24px; align-items: center; padding: 28px 0 40px; }
 .studio-copy { display: grid; gap: 22px; justify-items: start; }
 .studio h1 { font-size: clamp(40px, min(5.3vw, 9.6svh), 80px); line-height: .98; letter-spacing: -.01em; }
-.studio h1 span { display: block; overflow: hidden; padding-bottom: .08em; }
+.studio h1 span { display: block; overflow: hidden; padding: 0 .06em .26em 0; margin-bottom: -.18em; }
 .studio h1 span:nth-child(even) { padding-left: .9em; font-style: italic; font-weight: 300; color: var(--acc); transition: color .9s; }
 [data-theme="midnight"] .studio h1 span:nth-child(even) { color: var(--gold); }
 .studio h1 i { display: block; font-style: inherit; animation: rise .9s cubic-bezier(.2,.8,.2,1) both; }
 .studio h1 span:nth-child(2) i { animation-delay: .14s; }
 .studio h1 span:nth-child(3) i { animation-delay: .28s; }
-@keyframes rise { from { transform: translateY(105%); } to { transform: none; } }
+@keyframes rise { from { transform: translateY(135%); } to { transform: none; } }
 .studio-copy > p { max-width: 430px; font-size: clamp(16px, 1.5vw, 19px); }
 .dots { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
 .dot { width: 34px; height: 34px; border-radius: 50%; border: 0; padding: 0; background: var(--acc); position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); transition: transform .25s; }
