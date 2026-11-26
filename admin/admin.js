@@ -213,12 +213,36 @@ const mediaName = (u) => u.split("#")[0].replace(/^\/media\//, "");
 const cutRef = (cut, tone, og) => `/media/${mediaName(cut)}#cut=${tone}&og=${mediaName(og)}`;
 const altRef = (og, cut) => `/media/${mediaName(og)}#alt=${mediaName(cut)}`;
 const imageLists = (p) => [p.images || [], ...(p.colors || []).map((c) => c.images || [])];
-// Chosen colour, else the first cut photo's, else the one this kaftan's studio artwork already uses.
+// Chosen colour, else what the website will use: the cover's studio artwork, else the first cut photo's,
+// else a photo still waiting to be added, else whatever this kaftan had before.
 function toneOf(p) {
   const urls = imageLists(p).flat(), saved = products.find((x) => x.id === p.id);
-  const art = () => [...urls, ...(saved ? imageLists(saved).flat() : [])].map((u) => ART[u]?.tone).find(Boolean);
-  const t = p._tone || urls.map((u) => u.match(/#cut=([^&]+)/)?.[1]).find(Boolean) || Object.keys(TONES).find((k) => TONES[k] === art());
+  const artName = (list) => { const t = list.map((u) => ART[u]?.tone).find(Boolean); return Object.keys(TONES).find((k) => TONES[k] === t); };
+  const t = p._tone || artName(urls.slice(0, 1)) || urls.map((u) => u.match(/#cut=([^&]+)/)?.[1]).find(Boolean)
+    || p._jobs?.find((j) => j.tone)?.tone || artName([...urls, ...(saved ? imageLists(saved).flat() : [])]);
   return Object.hasOwn(TONES, t) ? t : Object.keys(TONES)[0];
+}
+// The background that suits an edited photo, judged by its strongest colour: red behind red, blue behind blue.
+// Plain white, grey or black clothes get the neutral one.
+async function suggestTone(file) {
+  const img = await createImageBitmap(file), c = Object.assign(document.createElement("canvas"), { width: 80, height: 80 });
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.drawImage(img, 0, 0, 80, 80); img.close();
+  const d = g.getImageData(0, 0, 80, 80).data, n = { ruby: 0, rose: 0, yellow: 0, sky: 0, indigo: 0 };
+  let solid = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 200) continue;
+    solid++;
+    const r = d[i], gr = d[i + 1], b = d[i + 2], max = Math.max(r, gr, b), range = max - Math.min(r, gr, b);
+    const sat = max ? range / max : 0, light = max / 255;
+    if (sat < 0.25 || light < 0.12) continue;
+    const hue = (60 * (max === r ? (gr - b) / range : max === gr ? (b - r) / range + 2 : (r - gr) / range + 4) + 360) % 360;
+    if (hue >= 190 && hue < 290) n[light < 0.45 || hue >= 255 ? "indigo" : "sky"]++;
+    else if (hue >= 42 && hue < 70 && sat > 0.4) n.yellow++;
+    else if (hue >= 290 || hue < 18) n[sat > 0.65 && (hue >= 340 || hue < 18) ? "ruby" : "rose"]++; // 18-42 is the wooden hanger
+  }
+  const [tone, count] = Object.entries(n).sort((a, b) => b[1] - a[1])[0];
+  return count > solid * 0.05 ? tone : "ash";
 }
 function setTone(p, tone) {
   p._tone = tone;
@@ -266,7 +290,9 @@ async function removeBackground(p, job) {
     // Cutout gives up by itself if it stops making progress, however long a slow download takes.
     const cut = await Promise.race([Cutout.remove(job.file, (text) => showProgress(text)), job.stopped]);
     if (job.state !== "work") return;
-    job.cut = cut; job.cutSrc = URL.createObjectURL(cut); job.choice = "cut";
+    const tone = await suggestTone(cut).catch(() => undefined);
+    if (job.state !== "work") return;
+    job.tone = tone; job.cut = cut; job.cutSrc = URL.createObjectURL(cut); job.choice = "cut";
   } catch (e) {
     if (job.state !== "work") return;
     job.error = e.message; job.failed = true;
@@ -301,7 +327,7 @@ async function addPhotos(p, list) {
         try { job.cutUrl ||= await upload(job.cut); } catch (e) { if (job.choice === "cut") throw e; }
       }
       if (job.state !== "up") continue;
-      const url = !job.cutUrl ? job.ogUrl : job.choice === "cut" ? cutRef(job.cutUrl, toneOf(p), job.ogUrl) : altRef(job.ogUrl, job.cutUrl);
+      const url = !job.cutUrl ? job.ogUrl : job.choice === "cut" ? cutRef(job.cutUrl, p._tone || job.tone || toneOf(p), job.ogUrl) : altRef(job.ogUrl, job.cutUrl);
       const at = list.indexOf(job.before); // a retried photo goes back in front of the ones picked after it
       at < 0 ? list.push(url) : list.splice(at, 0, url);
       failed.forEach((f) => (f.before ||= url));
@@ -325,7 +351,11 @@ function leavePhotos(ask = true) {
 }
 window.addEventListener("beforeunload", (e) => { if (editing?._jobs?.length) e.preventDefault(); });
 
-const toneStyle = (tone) => `style="background:${TONES[tone].tl}"`;
+// Previews use the light or the dark shade, whichever the website shows on this device.
+function toneStyle(tone) {
+  const theme = settings.site.theme, dark = theme === "midnight" || (theme !== "luxe" && matchMedia("(prefers-color-scheme: dark)").matches);
+  return `style="background:${TONES[tone][dark ? "td" : "tl"]}"`;
+}
 const thumbHTML = (u, tone) => `<img src="${esc(u)}" alt="" ${u.includes("#cut=") ? `class="cut" ${toneStyle(tone)}` : ""}>`;
 
 // The added photos of one list, followed by the ones still waiting. key is "p" or a colour number.
@@ -343,7 +373,7 @@ function photosHTML(p, list, key) {
   const pick = (j, v, label, inner) => `<button class="choice ${j.choice === v ? "on" : ""}" data-pick="${j.id}:${v}" aria-pressed="${j.choice === v}" ${(v === "cut" && !j.cut) || j.state !== "ready" ? "disabled" : ""}>${inner}<b>${label}</b></button>`;
   const pending = jobs.map((j, i) => {
     const n = list.length + i, working = j.state === "wait" || j.state === "work";
-    const edited = j.cut ? `<img src="${j.cutSrc}" alt="" class="cut" ${toneStyle(tone)}>`
+    const edited = j.cut ? `<img src="${j.cutSrc}" alt="" class="cut" ${toneStyle(p._tone || j.tone || tone)}>`
       : working ? `<span class="wait-box"><i class="spin"></i><span data-prog="${j.id}">${esc(j.text)}</span></span>`
       : `<span class="wait-box">Not edited</span>`;
     return `<div class="job"><div class="jobhead"><span>Photo ${n + 1}${SHOTS[n] ? ` · ${SHOTS[n]}` : ""}</span><button class="btn sm danger" data-drop="${j.id}">✕ Remove</button></div>

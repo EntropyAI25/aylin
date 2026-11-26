@@ -207,25 +207,37 @@
     bg.imageSmoothingQuality = "high";
     bg.drawImage(small, left, 0, span, h);
     // The wall seen through the hanger is often missed at this size, so look again, closely, at the top.
-    let top = -1, bottom = 0, sum = 0, count = 0;
+    let top = -1, bottom = 0, sum = 0, count = 0, first = 0, leftmost = SIZE, rightmost = 0;
     for (let i = 0; i < alpha.length; i++) {
       if (alpha[i] <= 0.5) continue;
       const y = (i / SIZE) | 0;
       if (top < 0) top = y;
       bottom = y;
+      leftmost = Math.min(leftmost, i % SIZE); rightmost = Math.max(rightmost, i % SIZE);
+      if (y === top) first++;
       if (y < top + 15) { sum += i % SIZE; count++; }
     }
-    const side = Math.min(w, h, Math.round(((bottom - top) / SIZE) * h * 0.25));
-    if (top > 1 && side > 0) { // a garment running off the top of the photo has no hanger to look through
-      const x = Math.round(Math.min(w - side, Math.max(0, left + (sum / count / SIZE) * span - side / 2)));
-      const y = Math.round(Math.max(0, (top / SIZE) * h - side * 0.1));
-      sg.clearRect(0, 0, SIZE, SIZE);
-      sg.drawImage(photo, x, y, side, side, 0, 0, SIZE, SIZE);
-      try {
-        putMask(await infer(sg.getImageData(0, 0, SIZE, SIZE).data, () => onProgress("Checking around the hanger…"), true));
-        bg.globalCompositeOperation = "destination-out";
-        bg.drawImage(small, x, y, side, side);
-      } catch {} // the first result is still good
+    // Sized from the height or the width, whichever is larger: a tightly framed photo loses height.
+    const tall = ((bottom - top) / SIZE) * h, wide = ((rightmost - leftmost) / SIZE) * span;
+    const size = Math.max(tall * 0.25, wide * 0.34);
+    // A garment running broadly off the top has no hanger to look through; a hanger touching the edge still does.
+    if ((top > 1 || first < SIZE * 0.25) && size > 0) {
+      // If the first look finds no wall behind the hanger, one more from a little further away.
+      for (const zoom of [1, 1.35]) {
+        const side = Math.min(w, h, Math.round(size * zoom));
+        const x = Math.round(Math.min(w - side, Math.max(0, left + (sum / count / SIZE) * span - side / 2)));
+        const y = Math.round(Math.max(0, (top / SIZE) * h - side * 0.1));
+        sg.clearRect(0, 0, SIZE, SIZE);
+        sg.drawImage(photo, x, y, side, side, 0, 0, SIZE, SIZE);
+        try {
+          const wall = await infer(sg.getImageData(0, 0, SIZE, SIZE).data, () => onProgress("Checking around the hanger…"), true);
+          if (!wall.some((v) => v > 0.5)) continue;
+          putMask(wall);
+          bg.globalCompositeOperation = "destination-out";
+          bg.drawImage(small, x, y, side, side);
+        } catch {} // the first result is still good
+        break;
+      }
     }
     const m = bg.getImageData(0, 0, w, h).data, pg = photo.getContext("2d"), px = pg.getImageData(0, 0, w, h);
     // Where the photo's own frame cuts the garment off (a close-up), fade that edge like the studio artwork.
