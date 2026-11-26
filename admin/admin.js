@@ -88,9 +88,9 @@ function shell() {
     ${items.map(([k, l]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${l}</button>`).join("")}
     <div class="spacer"></div><button id="view">View website ↗</button><button id="out">Sign out</button></aside>
     <main id="main"></main></div>`;
-  root.querySelector("aside").onclick = (e) => { const t = e.target.dataset.t; if (t) { tab = t; editing = null; shell(); } };
+  root.querySelector("aside").onclick = (e) => { const t = e.target.dataset.t; if (t && leavePhotos()) { tab = t; editing = null; shell(); } };
   $("#view").onclick = () => window.open("/", "_blank");
-  $("#out").onclick = async () => { await rpc("POST", "/api/admin/logout"); loginView(); };
+  $("#out").onclick = async () => { if (!leavePhotos()) return; await rpc("POST", "/api/admin/logout"); loginView(); };
   const m = $("#main");
   if (tab === "products") editing ? productForm(m) : productList(m);
   else if (tab === "categories") categoryView(m);
@@ -189,10 +189,11 @@ async function reloadCats() { cats = (await rpc("GET", "/api/categories")).data 
 const newProduct = () => ({ _new: true, name: "", price: 0, images: [], sizes: ["S", "M", "L"], colors: [], in_stock: true, featured: false, active: true, description: "", details: "", category_id: cats[0]?.id || null });
 
 function productList(m) {
+  const coverHTML = (p) => { const u = p.images?.[0] || p.colors?.find((c) => c.images?.length)?.images[0]; return u ? thumbHTML(u, toneOf(p)) : ""; };
   const money = (n) => `${settings.site.currency}${Number(n).toLocaleString("en-IN")}`;
   m.innerHTML = `<div class="bar"><h1>Products</h1><button class="btn" id="add">+ Add product</button></div>
     ${products.length ? `<table><tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th></th></tr>
-    ${products.map((p) => `<tr><td>${(p.images?.[0] || p.colors?.find((c) => c.images?.length)?.images[0]) ? `<img src="${esc(p.images?.[0] || p.colors.find((c) => c.images?.length).images[0])}" alt="">` : ""}</td>
+    ${products.map((p) => `<tr><td>${coverHTML(p)}</td>
       <td>${esc(p.name)}</td><td>${esc(cats.find((c) => c.id === p.category_id)?.name || "-")}</td>
       <td>${p.sale_price ? `<s>${money(p.price)}</s> ${money(p.sale_price)}` : money(p.price)}</td>
       <td>${p.active ? "" : `<span class="tag no">Hidden</span> `}${p.in_stock ? `<span class="tag ok">In stock</span>` : `<span class="tag no">Sold out</span>`}${p.featured ? ` <span class="tag">Featured</span>` : ""}</td>
@@ -200,6 +201,168 @@ function productList(m) {
       : `<div class="note">No products yet. Click <b>Add product</b> to create your first one.</div>`}`;
   $("#add").onclick = () => { editing = newProduct(); shell(); };
   m.onclick = (e) => { const id = e.target.dataset.id; if (id) { editing = structuredClone(products.find((p) => p.id === id)); shell(); } };
+}
+
+/* ---------- Product photos: background removal, Edited or Original ---------- */
+// Picked photos wait in product._jobs until the owner taps "Add". Each job remembers the exact
+// image list it belongs to, so redraws, reordering or opening another product cannot misplace it.
+const SHOTS = ["Front (cover)", "Close-up", "Side", "Back"];
+let jobSeq = 0, cutQueue = Promise.resolve();
+
+const mediaName = (u) => u.split("#")[0].replace(/^\/media\//, "");
+const cutRef = (cut, tone, og) => `/media/${mediaName(cut)}#cut=${tone}&og=${mediaName(og)}`;
+const altRef = (og, cut) => `/media/${mediaName(og)}#alt=${mediaName(cut)}`;
+const imageLists = (p) => [p.images || [], ...(p.colors || []).map((c) => c.images || [])];
+// Chosen colour, else the first cut photo's, else the one this kaftan's studio artwork already uses.
+function toneOf(p) {
+  const urls = imageLists(p).flat(), saved = products.find((x) => x.id === p.id);
+  const art = () => [...urls, ...(saved ? imageLists(saved).flat() : [])].map((u) => ART[u]?.tone).find(Boolean);
+  const t = p._tone || urls.map((u) => u.match(/#cut=([^&]+)/)?.[1]).find(Boolean) || Object.keys(TONES).find((k) => TONES[k] === art());
+  return Object.hasOwn(TONES, t) ? t : Object.keys(TONES)[0];
+}
+function setTone(p, tone) {
+  p._tone = tone;
+  imageLists(p).forEach((list) => list.forEach((u, i) => (list[i] = u.replace(/#cut=[^&]*/, `#cut=${tone}`))));
+}
+// Switches an added photo between its edited and original versions.
+function setVersion(url, edited, tone) {
+  const q = new URLSearchParams(url.split("#")[1]);
+  if (edited && q.has("alt")) return cutRef(q.get("alt"), tone, url);
+  if (!edited && q.has("og")) return altRef(q.get("og"), url);
+  return url;
+}
+
+function pickPhotos(p, list, files) {
+  for (const file of files) {
+    const job = { id: ++jobSeq, file, list, src: URL.createObjectURL(file) };
+    (p._jobs ||= []).push(job);
+    // A picture the browser cannot show would be broken on the website too, so it is not kept.
+    Object.assign(new Image(), { src: job.src, onerror: () => {
+      if (job.state === "gone") return;
+      dropJobs(p, (j) => j === job); p._paint();
+      toast(`${file.name} could not be opened. Please use a JPG, PNG or WebP picture.`, true);
+    } });
+    queueCut(p, job);
+  }
+  p._paint();
+}
+function queueCut(p, job) {
+  Object.assign(job, { state: "wait", choice: "og", text: "Waiting for its turn…", error: "", failed: false });
+  job.stopped = new Promise((r) => (job.stop = r));
+  cutQueue = cutQueue.then(() => removeBackground(p, job)); // one at a time, so phones can cope
+}
+// A skipped photo may still be running inside the editor, so its progress is shown on the photo now waiting.
+let showProgress = () => {};
+async function removeBackground(p, job) {
+  if (job.state !== "wait") return;
+  job.state = "work"; job.text = "Removing the background…"; p._paint();
+  showProgress = (text) => {
+    if (job.state !== "work") return;
+    job.text = text;
+    const el = document.querySelector(`[data-prog="${job.id}"]`); if (el) el.textContent = text;
+  };
+  try {
+    if (!window.Cutout) throw new Error("The photo editor did not load. Refresh the page to try again.");
+    // Cutout gives up by itself if it stops making progress, however long a slow download takes.
+    const cut = await Promise.race([Cutout.remove(job.file, (text) => showProgress(text)), job.stopped]);
+    if (job.state !== "work") return;
+    job.cut = cut; job.cutSrc = URL.createObjectURL(cut); job.choice = "cut";
+  } catch (e) {
+    if (job.state !== "work") return;
+    job.error = e.message; job.failed = true;
+  }
+  job.state = "ready"; p._paint();
+}
+function useOriginal(job) {
+  if (job.state !== "wait" && job.state !== "work") return;
+  job.state = "ready"; job.choice = "og"; job.stop();
+}
+function dropJobs(p, which) {
+  p._jobs = (p._jobs || []).filter((job) => {
+    if (!which(job)) return true;
+    job.state = "gone"; job.stop();
+    URL.revokeObjectURL(job.src); if (job.cutSrc) URL.revokeObjectURL(job.cutSrc);
+    return false;
+  });
+}
+// Uploads both versions of every photo waiting for one list, in the order they were picked.
+async function addPhotos(p, list) {
+  const jobs = (p._jobs || []).filter((j) => j.list === list);
+  if (jobs.some((j) => j.state !== "ready")) return;
+  jobs.forEach((j) => { j.state = "up"; j.error = ""; });
+  p._paint();
+  const failed = [];
+  let added = 0;
+  for (const job of jobs) {
+    if (job.state !== "up") continue; // removed meanwhile
+    try {
+      job.ogUrl ||= await upload(window.Cutout ? await Cutout.fit(job.file) : job.file);
+      if (job.cut && job.state === "up") {
+        try { job.cutUrl ||= await upload(job.cut); } catch (e) { if (job.choice === "cut") throw e; }
+      }
+      if (job.state !== "up") continue;
+      const url = !job.cutUrl ? job.ogUrl : job.choice === "cut" ? cutRef(job.cutUrl, toneOf(p), job.ogUrl) : altRef(job.ogUrl, job.cutUrl);
+      const at = list.indexOf(job.before); // a retried photo goes back in front of the ones picked after it
+      at < 0 ? list.push(url) : list.splice(at, 0, url);
+      failed.forEach((f) => (f.before ||= url));
+      dropJobs(p, (j) => j === job); added++;
+    } catch (e) {
+      if (job.state !== "up") continue;
+      job.state = "ready"; job.error = `Upload failed. ${e.message} Tap Add to try again.`; failed.push(job);
+    }
+    p._paint();
+  }
+  p._paint();
+  if (failed.length) toast(failed[0].error, true);
+  else if (added) toast("Photos added. Tap Save product to publish.");
+}
+// Asks before throwing away photos that were picked but not added yet.
+function leavePhotos(ask = true) {
+  if (!editing?._jobs?.length) return true;
+  if (ask && !confirm("Some photos are not added yet. Leave without them?")) return false;
+  dropJobs(editing, () => true);
+  return true;
+}
+window.addEventListener("beforeunload", (e) => { if (editing?._jobs?.length) e.preventDefault(); });
+
+const toneStyle = (tone) => `style="background:${TONES[tone].tl}"`;
+const thumbHTML = (u, tone) => `<img src="${esc(u)}" alt="" ${u.includes("#cut=") ? `class="cut" ${toneStyle(tone)}` : ""}>`;
+
+// The added photos of one list, followed by the ones still waiting. key is "p" or a colour number.
+function photosHTML(p, list, key) {
+  const tone = toneOf(p), act = key === "p" ? "data-m" : "data-cm", pre = key === "p" ? "" : `${key}:`;
+  const saved = list.map((u, i) => {
+    const edited = u.includes("#cut=");
+    return `<figure>${thumbHTML(u, tone)}<figcaption>${i + 1}${SHOTS[i] ? ` · ${SHOTS[i]}` : ""}</figcaption>
+      ${edited || u.includes("#alt=") ? `<div class="ver"><button data-v="${key}:${i}:cut" class="${edited ? "on" : ""}" aria-pressed="${edited}">Edited</button><button data-v="${key}:${i}:og" class="${edited ? "" : "on"}" aria-pressed="${!edited}">Original</button></div>` : ""}
+      <div class="acts"><button ${act}="${pre}${i}:-1" aria-label="Move earlier">←</button><button ${act}="${pre}${i}:x" aria-label="Remove">✕</button><button ${act}="${pre}${i}:1" aria-label="Move later">→</button></div></figure>`;
+  }).join("");
+  const jobs = (p._jobs || []).filter((j) => j.list === list);
+  const busy = jobs.filter((j) => j.state === "wait" || j.state === "work").length;
+  const uploading = jobs.some((j) => j.state === "up");
+  const pick = (j, v, label, inner) => `<button class="choice ${j.choice === v ? "on" : ""}" data-pick="${j.id}:${v}" aria-pressed="${j.choice === v}" ${(v === "cut" && !j.cut) || j.state !== "ready" ? "disabled" : ""}>${inner}<b>${label}</b></button>`;
+  const pending = jobs.map((j, i) => {
+    const n = list.length + i, working = j.state === "wait" || j.state === "work";
+    const edited = j.cut ? `<img src="${j.cutSrc}" alt="" class="cut" ${toneStyle(tone)}>`
+      : working ? `<span class="wait-box"><i class="spin"></i><span data-prog="${j.id}">${esc(j.text)}</span></span>`
+      : `<span class="wait-box">Not edited</span>`;
+    return `<div class="job"><div class="jobhead"><span>Photo ${n + 1}${SHOTS[n] ? ` · ${SHOTS[n]}` : ""}</span><button class="btn sm danger" data-drop="${j.id}">✕ Remove</button></div>
+      <div class="choices">${pick(j, "cut", "Edited", edited)}${pick(j, "og", "Original", `<img src="${j.src}" alt="">`)}</div>
+      ${j.error ? `<p class="err">${esc(j.error)}</p>` : ""}
+      ${working ? `<button class="btn sm ghost" data-skip="${j.id}">Use original</button>` : ""}
+      ${j.failed && j.state === "ready" ? `<button class="btn sm ghost" data-retry="${j.id}">Try editing again</button>` : ""}
+      ${j.state === "up" ? `<p class="muted">Uploading…</p>` : ""}</div>`;
+  }).join("");
+  const count = jobs.length > 1 ? `${jobs.length} photos` : "photo";
+  return `${saved ? `<div class="imgs">${saved}</div>` : ""}${jobs.length ? `<div class="jobs">${pending}</div>
+    <p class="muted">${busy ? "Please wait, or use the original." : "Choose Edited or Original, then tap Add."}</p>
+    <div class="jobbar"><button class="btn" data-add="${key}" ${busy || uploading ? "disabled" : ""}>${uploading ? "Uploading…" : busy ? "Preparing…" : `Add ${count}`}</button>
+    ${busy > 1 ? `<button class="btn ghost" data-skipall="${key}">Use all originals</button>` : ""}</div>` : ""}`;
+}
+function tonesHTML(p) {
+  if (!imageLists(p).flat().some((u) => u.includes("#cut=")) && !p._jobs?.some((j) => j.cut)) return "";
+  const cur = toneOf(p);
+  return `<span class="muted">Background colour for edited photos</span><div class="tones">${Object.entries(TONES).map(([id, t]) => `<button data-tone="${id}" class="${id === cur ? "on" : ""}" aria-pressed="${id === cur}"><i style="background:${t.tl}"></i>${esc(t.label)}</button>`).join("")}</div>`;
 }
 
 function productForm(m, onDone = shell) {
@@ -222,14 +385,14 @@ function productForm(m, onDone = shell) {
         <label>Description<textarea id="desc">${esc(p.description)}</textarea></label>
         <label>Details (one per line)<textarea id="details">${esc(p.details)}</textarea></label>
       </div>
-      <div class="card"><b>Photos</b><p class="muted">The first photo is the cover. Use ← → to reorder.</p>
-        <div class="imgs">${p.images.map((u, i) => `<figure><img src="${esc(u)}" alt=""><div class="acts">
-          <button data-m="${i}:-1">←</button><button data-m="${i}:x">✕</button><button data-m="${i}:1">→</button></div></figure>`).join("")}</div>
+      <div class="card"><b>Photos</b><p class="muted">Add photos in this order: 1 Front (cover), 2 Embroidery close-up, 3 Side, 4 Back. Use ← → to reorder.<br>The background is removed for you, and you choose Edited or Original.</p>
+        <div id="tones"></div>
+        <div class="photos" data-area="p"></div>
         <input type="file" id="files" accept="image/*" multiple></div>
       <div class="card"><div><b>Sizes</b><p class="muted">Add sizes one by one and mark each as in stock or out of stock. Out of stock sizes show crossed out on the website.</p><div id="szs" style="margin-top:8px">${p.sizes.map((s, i) => `<div class="colorrow"><input type="text" data-sn="${i}" value="${esc(s)}" placeholder="Size, e.g. M"><select data-ss="${i}"><option value="in">In stock</option><option value="out" ${(p.sizes_out || []).includes(s) ? "selected" : ""}>Out of stock</option></select><button class="btn sm danger" data-sd="${i}">✕</button></div>`).join("")}</div>
           <button class="btn sm ghost" id="addsize">+ Add size</button></div>
         <div><b>Colours</b><p class="muted">Add photos to a colour and the product page switches to them when that colour is chosen.</p><div id="cols" style="margin-top:8px">${p.colors.map((c, i) => `<div style="margin-bottom:14px"><div class="colorrow"><input type="color" data-ch="${i}" value="${esc(c.hex)}"><input type="text" data-cn="${i}" value="${esc(c.name)}" placeholder="Colour name"><button class="btn sm danger" data-cd="${i}">✕</button></div>
-          <div class="imgs">${(c.images || []).map((u, j) => `<figure><img src="${esc(u)}" alt=""><div class="acts"><button data-cm="${i}:${j}:-1">←</button><button data-cm="${i}:${j}:x">✕</button><button data-cm="${i}:${j}:1">→</button></div></figure>`).join("")}</div>
+          <div class="photos" data-area="${i}"></div>
           <input type="file" data-cf="${i}" accept="image/*" multiple></div>`).join("")}</div>
           <button class="btn sm ghost" id="addcol">+ Add colour</button></div></div>
       <div class="card">
@@ -239,6 +402,14 @@ function productForm(m, onDone = shell) {
         ${p._new ? "" : `<button class="btn danger" id="del" style="justify-self:start">Delete product</button>`}
       </div>`;
     wire();
+    const shown = m.firstElementChild; // no longer on screen once something else replaces this form
+    p._paint = () => {
+      if (!shown.isConnected) return;
+      m.querySelectorAll("[data-area]").forEach((el) => (el.innerHTML = photosHTML(p, listFor(el.dataset.area), el.dataset.area)));
+      $("#tones").innerHTML = tonesHTML(p);
+      $("#save").classList.toggle("wait", Boolean(p._jobs?.length));
+    };
+    p._paint();
     const off = () => { const a = +$("#price").value, b = +$("#sale").value; $("#off").textContent = b && a && b < a ? `Shown on the website as ${Math.round((1 - b / a) * 100)}% off` : ""; };
     $("#price").oninput = $("#sale").oninput = off; off();
   };
@@ -252,8 +423,9 @@ function productForm(m, onDone = shell) {
     p.colors = [...document.querySelectorAll("[data-ch]")].map((el, i) => ({ hex: el.value, name: document.querySelector(`[data-cn="${i}"]`).value.trim() || "Colour", images: p.colors[i]?.images || [] }));
     p.in_stock = $("#stock").checked; p.featured = $("#feat").checked; p.active = $("#active").checked;
   };
+  const listFor = (key) => key === "p" ? p.images : (p.colors[+key].images ||= []);
   const wire = () => {
-    $("#back").onclick = () => { editing = null; onDone(); };
+    $("#back").onclick = () => { if (!leavePhotos()) return; editing = null; onDone(); };
     const syncStock = () => {
       const rows = [...document.querySelectorAll("[data-sn]")].map((el, i) => ({ n: el.value.trim(), out: document.querySelector(`[data-ss="${i}"]`).value === "out" })).filter((r) => r.n);
       if (rows.length && rows.every((r) => r.out)) $("#stock").checked = false;
@@ -262,9 +434,19 @@ function productForm(m, onDone = shell) {
     $("#addsize").onclick = () => { collect(); p.sizes.push(""); draw(); document.querySelectorAll("[data-sn]")[p.sizes.length - 1]?.focus(); };
     $("#addcol").onclick = () => { collect(); p.colors.push({ name: "", hex: "#d9a9a6" }); draw(); };
     m.onclick = (e) => {
-      const d = e.target.dataset;
+      const d = e.target.closest("button")?.dataset;
+      if (!d) return;
+      const job = (id) => p._jobs?.find((j) => j.id === +id);
+      if (d.skip) { const j = job(d.skip); if (j) useOriginal(j); p._paint(); }
+      if (d.retry) { const j = job(d.retry); if (j?.failed) queueCut(p, j); p._paint(); }
+      if (d.skipall) { const list = listFor(d.skipall); p._jobs.filter((j) => j.list === list).forEach(useOriginal); p._paint(); }
+      if (d.drop) { dropJobs(p, (j) => j.id === +d.drop); p._paint(); }
+      if (d.pick) { const [id, v] = d.pick.split(":"); const j = job(id); if (j) j.choice = v; p._paint(); }
+      if (d.add) addPhotos(p, listFor(d.add));
+      if (d.tone) { setTone(p, d.tone); p._paint(); }
+      if (d.v) { const [key, i, v] = d.v.split(":"); const list = listFor(key); list[+i] = setVersion(list[+i], v === "cut", toneOf(p)); p._paint(); }
       if (d.sd !== undefined) { collect(); p.sizes.splice(+d.sd, 1); draw(); }
-      if (d.cd !== undefined) { collect(); p.colors.splice(+d.cd, 1); draw(); }
+      if (d.cd !== undefined) { collect(); const [gone] = p.colors.splice(+d.cd, 1); dropJobs(p, (j) => j.list === gone.images); draw(); }
       if (d.cm) {
         collect(); const [ci, j, a] = d.cm.split(":"); const arr = p.colors[+ci].images; const idx = +j;
         if (a === "x") arr.splice(idx, 1);
@@ -278,35 +460,35 @@ function productForm(m, onDone = shell) {
         draw();
       }
     };
-    document.querySelectorAll("[data-cf]").forEach((inp) => inp.onchange = async (e) => {
-      collect(); toast("Uploading…"); const c = p.colors[+inp.dataset.cf];
-      try { for (const f of e.target.files) c.images.push(await upload(f)); toast("Photos added."); } catch (x) { toast(x.message, true); }
-      draw();
-    });
-    $("#files").onchange = async (e) => {
-      collect(); toast("Uploading…");
-      try { for (const f of e.target.files) p.images.push(await upload(f)); toast("Photos added."); } catch (x) { toast(x.message, true); }
-      draw();
-    };
+    const picked = (inp, key) => { pickPhotos(p, listFor(key), [...inp.files]); inp.value = ""; };
+    document.querySelectorAll("[data-cf]").forEach((inp) => inp.onchange = () => picked(inp, inp.dataset.cf));
+    $("#files").onchange = (e) => picked(e.target, "p");
     $("#del")?.addEventListener("click", async () => {
       if (!confirm(`Delete "${p.name}" permanently?`)) return;
+      dropJobs(p, () => true);
       const { error } = await rpc("DELETE", `/api/admin/products/${p.id}`);
       if (error) return toast(error.message, true);
       products = products.filter((x) => x.id !== p.id); editing = null; toast("Deleted."); onDone(true);
     });
     $("#save").onclick = async () => {
       collect();
+      if (p._jobs?.length) return toast("Some photos are not added yet. Tap Add (or remove them), then save.", true);
       if (!p.name) return toast("Please enter a name.", true);
       const row = {
         name: p.name, category_id: p.category_id, price: p.price, sale_price: p.sale_price, sale_label: p.sale_label || null,
         description: p.description, details: p.details,
         images: p.images, sizes: p.sizes, sizes_out: p.sizes_out || [], colors: p.colors, in_stock: p.in_stock, featured: p.featured, active: p.active, sort: p.sort,
       };
+      const pickers = [...m.querySelectorAll("input[type=file]")];
+      pickers.forEach((el) => (el.disabled = true)); // photos picked while saving would be lost
       const res = p._new ? await rpc("POST", "/api/admin/products", row) : await rpc("PUT", `/api/admin/products/${p.id}`, row);
+      pickers.forEach((el) => (el.disabled = false));
       if (res.error) return toast(res.error.message, true);
       const i = products.findIndex((x) => x.id === res.data.id);
       i >= 0 ? (products[i] = res.data) : products.unshift(res.data);
-      editing = null; toast("Saved. Live on the website."); onDone(true, res.data);
+      toast("Saved. Live on the website.");
+      if (editing && editing !== p) return; // another product was opened while this one was saving
+      editing = null; onDone(true, res.data);
     };
   };
   draw();
@@ -350,6 +532,7 @@ function visual() {
 
   const closeSheet = (force) => {
     if (!force && dirty && !confirm("Discard your unsaved changes?")) return false;
+    if (!leavePhotos(!force)) return false;
     if (dirty && !force) preview(); // put the page back to what is saved
     dirty = false; sel = null; editing = null; body.innerHTML = ""; body.oninput = body.onclick = null;
     sheet.classList.remove("open"); vis.classList.remove("sheet-open"); mark(false); return true;

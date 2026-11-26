@@ -72,6 +72,8 @@
 .hang .back { opacity: 0; transform: translateX(-50%) scaleX(.05); }
 .hang.flipped .front { opacity: 0; transform: translateX(-50%) scaleX(.05); }
 .hang.flipped .back { opacity: 1; transform: translateX(-50%); }
+/* cut-outs made in /admin can be any shape, so they must also fit the width of the stage */
+.hang img.own { top: calc(26px - 2.4%); height: auto; max-width: 100%; max-height: calc(100% - 34px); } /* lifted to meet the hook */
 .hang.photo::before { display: none; }
 .hang.photo img { height: calc(100% - 30px); width: min(80%, 460px); object-fit: cover; border-radius: 999px 999px 8px 8px; }
 .flip { position: absolute; right: 0; bottom: 4px; z-index: 3; padding: 10px 18px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent); background: color-mix(in srgb, var(--bg) 70%, transparent); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
@@ -187,7 +189,7 @@
 .card .thumb .badge { top: auto; left: 50%; bottom: 10px; transform: translateX(-50%); white-space: nowrap; z-index: 1; }
 .card:hover .thumb, .card:focus-visible .thumb, .card.peek .thumb { transform: translateY(-6px); box-shadow: 0 22px 40px rgba(50,20,30,.2); }
 .card:hover .thumb img.close, .card:focus-visible .thumb img.close, .card.peek .thumb img.close { opacity: 1; transform: none; }
-.card:hover .thumb img.close + img, .card.peek .thumb img.cut { opacity: 0; }
+.card:hover .thumb img.close + img, .card.peek .thumb img.close + img.cut, .card.peek .thumb img.close.whole + img { opacity: 0; }
 .card .meta { text-align: center; display: grid; gap: 2px; justify-items: center; }
 .card .meta .szs { font-size: 12px; letter-spacing: .2em; color: var(--muted); }
 .card .meta .szs s { opacity: .5; }

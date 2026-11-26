@@ -93,7 +93,20 @@ function layout(cats) {
   }
 }
 
-const lookOf = (p) => LOOKS[p?.images?.[0]];
+// How the photo at position i is shown: studio artwork, a cut-out made in /admin ("#cut=<tone>"), or the photo as it is.
+const VIEWS = ["front", "detail", "side", "back"]; // photo order in /admin
+const photo = (u, i) => {
+  if (ART[u]) return ART[u];
+  const cut = u.match(/#cut=(\w*)/);
+  return cut ? { src: u, view: VIEWS[i], cut: true, own: true, tone: Object.hasOwn(TONES, cut[1]) ? TONES[cut[1]] : undefined } : { src: u };
+};
+const cover = (p) => photo(img(p), 0);
+const photosOf = (p) => (p.images.length ? p.images : p.colors.find((c) => c.images?.length)?.images || []).map(photo);
+// Colour pairing: the original cover keeps its own, otherwise the first cut-out from /admin decides (cover first).
+const lookOf = (p) => {
+  const list = photosOf(p);
+  return (ART[p.images[0]] || list.find((x) => x.own && x.tone) || list.find((x) => x.tone))?.tone;
+};
 const lookVars = (l) => (l ? `--tl:${l.tl};--td:${l.td};--acc:${l.acc}` : "--tl:#efe2da;--td:#1a1c28;--acc:#9c6b73");
 const sizesFree = (p) => p.sizes.filter((s) => !p.sizes_out.includes(s));
 const productUrl = (p) => `/product/${encodeURIComponent(p.slug)}`;
@@ -119,9 +132,9 @@ function ask(row, hint, text = "Please choose your size first.") {
 const card = (p) => {
   const onSale = p.sale_price && p.sale_price < p.price;
   const l = lookOf(p);
-  const second = l ? l.detail : p.images?.[1];
+  const first = cover(p), second = p.images[1] && photo(p.images[1], 1);
   return `<a class="card rv look" style="${lookVars(l)}" href="${productUrl(p)}"${ed("product", "", p.id)}>
-    <div class="thumb">${second ? `<img class="close${l ? " whole" : ""}" loading="lazy" src="${esc(second)}" alt="">` : ""}<img class="${l ? "cut" : "front"}" loading="lazy" src="${esc(l ? l.front : img(p))}" alt="${esc(p.name)}">
+    <div class="thumb">${second ? `<img class="close${second.cut ? " whole" : ""}" loading="lazy" src="${esc(second.src)}" alt="">` : ""}<img class="${first.cut ? "cut" : "front"}" loading="lazy" src="${esc(first.src)}" alt="${esc(p.name)}">
       ${!p.in_stock ? `<span class="badge out">Sold out</span>` : onSale ? `<span class="badge">${pct(p)}% off</span>` : ""}</div>
     <div class="meta"><h3>${esc(p.name)}</h3>
       <div class="price">${priceHtml(p)}</div>
@@ -161,10 +174,11 @@ function heroHtml(products) {
         <div class="rail"></div>
         <span class="emblem behind" aria-hidden="true"></span>
         ${list.map((p, i) => {
-          const l = lookOf(p), at = i < 2 ? "src" : "data-src";
-          return `<div class="hang${l ? "" : " photo"}">${l
-            ? `<img class="front" ${at}="${l.front}" alt="${esc(p.name)}"><img class="back" ${at}="${l.back}" alt="${esc(p.name)}, back">`
-            : `<img class="front" ${at}="${esc(img(p))}" alt="${esc(p.name)}">`}</div>`;
+          const first = cover(p), at = i < 2 ? "src" : "data-src";
+          const hangs = first.cut && first.view !== "detail"; // a close-up is framed, not hung on the hanger
+          const back = hangs && photosOf(p).slice(1).find((x) => x.cut && x.view === "back");
+          const hung = (x, side, alt) => `<img class="${side}${x.own ? " own" : ""}" ${at}="${esc(x.src)}" alt="${alt}">`;
+          return `<div class="hang${hangs ? "" : " photo"}">${hung(first, "front", esc(p.name))}${back ? hung(back, "back", `${esc(p.name)}, back`) : ""}</div>`;
         }).join("")}
         <div class="lens" id="lens" aria-hidden="true"></div>
         <button type="button" class="flip" id="flip">See the back</button>
@@ -180,8 +194,8 @@ function stackHtml(products) {
   <section class="wrap">
     <div class="stack-head rv">${emblem}<span class="eyebrow">Myoon Zoon Collection</span><h2>Pick your colour</h2></div>
     <div class="stack">${list.map((p, i) => {
-      const l = lookOf(p), second = l ? l.detail : p.images?.[1] || img(p);
-      return `<article class="stack-card look" style="--i:${i};${lookVars(l)}" data-id="${esc(p.id)}"><div class="stack-body"${ed("product", "", p.id)}>
+      const first = cover(p), second = p.images[1] ? photo(p.images[1], 1) : first;
+      return `<article class="stack-card look" style="--i:${i};${lookVars(lookOf(p))}" data-id="${esc(p.id)}"><div class="stack-body"${ed("product", "", p.id)}>
         <div class="stack-text">
           <span class="num">${String(i + 1).padStart(2, "0")} / ${String(list.length).padStart(2, "0")}</span>
           <h3>${esc(p.name)}</h3>
@@ -191,8 +205,8 @@ function stackHtml(products) {
           <div class="hint" aria-live="polite"></div>
           <div class="stack-actions">${p.in_stock ? `<button type="button" class="btn wa" data-order>Order on WhatsApp</button>` : `<button type="button" class="btn" disabled>Sold out</button>`}<a class="link" href="${productUrl(p)}">Details</a></div>
         </div>
-        <a class="stack-art${l ? "" : " photo"}" href="${productUrl(p)}" aria-label="${esc(p.name)}"><img loading="lazy" src="${esc(l ? l.front : img(p))}" alt="${esc(p.name)}"></a>
-        <a class="stack-detail${l ? " whole" : ""}" href="${productUrl(p)}" tabindex="-1" aria-hidden="true"><img loading="lazy" src="${esc(second)}" alt=""></a>
+        <a class="stack-art${first.cut ? "" : " photo"}" href="${productUrl(p)}" aria-label="${esc(p.name)}"><img loading="lazy" src="${esc(first.src)}" alt="${esc(p.name)}"></a>
+        <a class="stack-detail${second.cut ? " whole" : ""}" href="${productUrl(p)}" tabindex="-1" aria-hidden="true"><img loading="lazy" src="${esc(second.src)}" alt=""></a>
       </div></article>`;
     }).join("")}</div>
     <p class="center" style="padding:24px 0 0"><a class="btn ghost" href="/shop">See everything</a></p>
@@ -255,18 +269,15 @@ async function product(cats, products) {
   if (!p) { $("#app").innerHTML = `<div class="wrap"><p class="empty">Product not found. <a href="/shop" style="text-decoration:underline">Back to shop</a></p></div>`; return; }
   const cat = cats.find((c) => c.id === p.category_id);
   const onSale = p.sale_price && p.sale_price < p.price;
-  const l = lookOf(p);
-  const shots = (list) => list.map((u) => ({ src: u }));
-  // With studio artwork: cut-out front, close-up, cut-out side and back, then any extra uploads.
-  const studio = () => [{ src: l.front, cut: true }, { src: l.detail, cut: true, whole: true }, { src: l.side, cut: true }, { src: l.back, cut: true }, ...shots(p.images.slice(4))];
+  const shots = (list) => list.map(photo);
   const colourShots = p.colors.find((c) => c.images?.length)?.images;
-  let gal = colourShots ? shots(colourShots) : l ? studio() : shots(p.images.length ? p.images : [img(p)]); // gallery follows the chosen colour
+  let gal = shots(colourShots || (p.images.length ? p.images : [img(p)])); // gallery follows the chosen colour
   const wanted = params.get("size");
   let cur = 0, colour = p.colors.length === 1 ? p.colors[0].name : p.colors.length ? "" : "n/a";
   let size = !p.sizes.length ? "n/a" : sizesFree(p).includes(wanted) ? wanted : sizesFree(p).length === 1 ? sizesFree(p)[0] : "";
   const others = products.filter((x) => x.id !== p.id).slice(0, 8);
 
-  $("#app").innerHTML = `<div class="wrap look" style="${lookVars(l)}">
+  $("#app").innerHTML = `<div class="wrap look" style="${lookVars(lookOf(p))}">
     <div class="crumbs"><a href="/shop">Shop</a>${cat ? ` / <a href="/shop?cat=${esc(cat.slug)}">${esc(cat.name)}</a>` : ""}</div>
     <div class="pdp"${ed("product", "", p.id)}>
       <div class="gallery"><div class="main${Studio.canHover ? " zoom" : ""}" id="frame"><img id="main" alt="${esc(p.name)}"></div>
@@ -286,7 +297,7 @@ async function product(cats, products) {
         ${p.details ? `<div class="details"><h4 class="eyebrow" style="margin-bottom:8px">Details</h4><ul>${p.details.split("\n").filter(Boolean).map((d) => `<li>${esc(d)}</li>`).join("")}</ul></div>` : ""}
       </div>
     </div>
-    ${others.length ? `<div class="more rv"><span class="eyebrow">More from the collection</span><div class="more-row">${others.map((x) => { const o = lookOf(x); return `<a class="look" style="${lookVars(o)}" href="${productUrl(x)}"><i><img loading="lazy" class="${o ? "cut" : ""}" src="${esc(o ? o.front : img(x))}" alt=""></i>${esc(x.name)}</a>`; }).join("")}</div></div>` : ""}
+    ${others.length ? `<div class="more rv"><span class="eyebrow">More from the collection</span><div class="more-row">${others.map((x) => { const first = cover(x); return `<a class="look" style="${lookVars(lookOf(x))}" href="${productUrl(x)}"><i><img loading="lazy" class="${first.cut ? "cut" : ""}" src="${esc(first.src)}" alt=""></i>${esc(x.name)}</a>`; }).join("")}</div></div>` : ""}
     </div>
     ${p.in_stock ? `<div class="buybar" id="buybar"><div class="price"><span>${priceHtml(p)}</span><small id="barsize"></small></div><button type="button" class="btn wa" id="order2">Order on WhatsApp</button></div>` : ""}`;
 
@@ -295,7 +306,7 @@ async function product(cats, products) {
     cur = i;
     $("#main").src = gal[cur]?.src || img(p);
     frame.classList.toggle("cut", !!gal[cur]?.cut);
-    frame.classList.toggle("whole", !!gal[cur]?.whole);
+    frame.classList.toggle("whole", gal[cur]?.view === "detail"); // a cut-out close-up is shown whole
     document.querySelectorAll("#thumbs button").forEach((x, n) => x.classList.toggle("on", n === cur));
   };
   const drawThumbs = () => {
