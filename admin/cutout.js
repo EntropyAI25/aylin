@@ -181,6 +181,35 @@
     }
   }
 
+  // Close-ups: the photo's top edge cuts through the hanger, and the model leaves the wall between its arms.
+  // Starting from the top edge and from wall already removed, this spreads over wall-coloured pixels near the
+  // top and stops at any edge (hanger, collar). `m` is the mask, `d` the photo, both RGBA of w x h.
+  function clearTopWall(m, d, w, h) {
+    const band = Math.round(h * 0.2), wall = [0, 0, 0];
+    let samples = 0;
+    for (let i = 0; i < w * band; i++) if (m[i * 4 + 3] < 20) { for (let c = 0; c < 3; c++) wall[c] += d[i * 4 + c]; samples++; }
+    if (samples < w * band * 0.03) return; // not enough bare wall to know its colour
+    for (let c = 0; c < 3; c++) wall[c] /= samples;
+    const apart = (i, r, g, b) => Math.hypot(d[i * 4] - r, d[i * 4 + 1] - g, d[i * 4 + 2] - b);
+    const seen = new Uint8Array(w * band), todo = [];
+    for (let i = 0; i < w * band; i++) if (m[i * 4 + 3] < 20 || (i < w * 3 && apart(i, ...wall) < 40)) { seen[i] = 1; todo.push(i); }
+    while (todo.length) {
+      const i = todo.pop(), x = i % w;
+      m[i * 4 + 3] = 0;
+      for (const j of [x ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) {
+        if (j < 0 || j >= w * band || seen[j] || apart(j, ...wall) > 40 || apart(j, d[i * 4], d[i * 4 + 1], d[i * 4 + 2]) > 10) continue;
+        seen[j] = 1; todo.push(j);
+      }
+    }
+    // Sweep up the thin pale rim left along the edges: a few pixels more, only where still close to the wall.
+    const far = Math.max(2, Math.round(w / 300));
+    for (let k = 0; k < far; k++) {
+      const rim = [];
+      for (let i = 0; i < w * band; i++) if (!seen[i] && apart(i, ...wall) < 55 && (seen[i - 1] || seen[i + 1] || seen[i - w] || seen[i + w])) rim.push(i);
+      for (const i of rim) { seen[i] = 1; m[i * 4 + 3] = 0; }
+    }
+  }
+
   async function cut(file, onProgress) {
     onProgress("Reading the photo…");
     const photo = await draw(file, 1600), w = photo.width, h = photo.height;
@@ -248,6 +277,7 @@
     };
     const fl = cutOff(h, (y) => y * w) ? w * 0.06 : 0, fr = cutOff(h, (y) => y * w + w - 1) ? w * 0.06 : 0;
     const fb = cutOff(w, (x) => (h - 1) * w + x) ? h * 0.08 : 0;
+    if (fb) clearTopWall(m, px.data, w, h);
     const fade = (distance, size) => (size ? Math.min(1, distance / size) : 1);
     let x0 = w, y0 = h, x1 = -1, y1 = -1;
     for (let y = 0, i = 3; y < h; y++) for (let x = 0; x < w; x++, i += 4) {
