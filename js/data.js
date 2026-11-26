@@ -11,8 +11,10 @@ function merge(base, over) {
 }
 
 async function api(path) {
-  // Inside the admin preview (iframe), skip caches so edits show up straight away.
-  const res = await fetch(window.parent !== window ? `${path}${path.includes("?") ? "&" : "?"}t=${Date.now()}` : path, window.parent !== window ? { cache: "no-store" } : undefined);
+  // In the admin and in its preview (iframe), skip caches: edits must show straight away, and a save
+  // built on a cached copy would undo the one before it.
+  const fresh = window.AYLIN_ADMIN || window.parent !== window;
+  const res = await fetch(fresh ? `${path}${path.includes("?") ? "&" : "?"}t=${Date.now()}` : path, fresh ? { cache: "no-store" } : undefined);
   if (!res.ok) throw new Error(`${path} ${res.status}`);
   return res.json();
 }
@@ -49,6 +51,14 @@ async function getProducts() {
     return [];
   }
 }
+
+// Home banner: the order chosen in /admin, else featured products first. Products added after
+// the order was chosen come at the end. hero.hidden lists the ones left out of the banner.
+function heroOrder(products, hero) {
+  const order = hero.order || [], at = (p) => (order.includes(p.id) ? order.indexOf(p.id) : order.length);
+  return [...products].sort((a, b) => b.featured - a.featured).sort((a, b) => at(a) - at(b));
+}
+const heroList = (products, hero) => heroOrder(products, hero).filter((p) => !(hero.hidden || []).includes(p.id)).slice(0, 8);
 
 async function getProduct(slug) {
   return (await getProducts()).find((p) => p.slug === slug) || null;

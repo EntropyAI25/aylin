@@ -10,6 +10,7 @@ function toast(msg, err) {
 /* What can be edited under each tab. Add a field here and it appears in the admin. */
 const SECTIONS = {
   hero: { label: "Homepage banner", fields: [
+    ["display", "Show the kaftan display (untick for a simple banner with only text and button)", "toggle"],
     ["eyebrow", "Small heading", "text"], ["title", "Headline", "text"], ["subtitle", "Sub-text", "textarea"],
     ["image", "Background image (optional)", "image"], ["ctaText", "Button text", "text"], ["ctaLink", "Button link", "text"]] },
   announcement: { label: "Announcement bar", fields: [["enabled", "Show the bar", "toggle"], ["text", "Text", "text"]] },
@@ -97,6 +98,69 @@ function shell() {
   else sectionForm(m, tab);
 }
 
+/* ---------- A list of products that can be moved up and down ---------- */
+// rows is changed in place; onChange runs after every move or tick.
+function productRows(box, rows, onChange, ticks) {
+  const draw = () => {
+    box.innerHTML = rows.map((r, i) => `<div class="orow"><span class="onum">${i + 1}</span>${coverHTML(r.p)}
+      ${ticks ? `<label class="check"><input type="checkbox" data-tick="${i}" ${r.on ? "checked" : ""}> ${esc(r.p.name)}</label>` : `<span>${esc(r.p.name)}${r.p.active ? "" : ` <span class="tag no">Hidden</span>`}</span>`}
+      <button type="button" data-up-row="${i}" aria-label="Move ${esc(r.p.name)} up" ${i ? "" : "disabled"}>↑</button>
+      <button type="button" data-down-row="${i}" aria-label="Move ${esc(r.p.name)} down" ${i < rows.length - 1 ? "" : "disabled"}>↓</button></div>`).join("");
+  };
+  box.onclick = (e) => {
+    const up = e.target.dataset.upRow, down = e.target.dataset.downRow;
+    if (up === undefined && down === undefined) return;
+    const i = +(up ?? down), j = up === undefined ? i + 1 : i - 1;
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+    draw(); onChange();
+  };
+  box.onchange = (e) => { const i = e.target.dataset.tick; if (i !== undefined) { rows[+i].on = e.target.checked; onChange(); } };
+  draw();
+}
+
+// Order of all products on the Shop page.
+function orderForm(m, onDone = shell, onMove) {
+  const rows = [...products].map((p) => ({ p }));
+  m.innerHTML = `<div class="bar"><h1>Product order</h1><div><button class="btn ghost" id="back">← Back</button> <button class="btn" id="save">Save order</button></div></div>
+    <div class="card"><p class="muted">The top product comes first on the Shop page. On the home page, featured products still come first.</p><div id="rows"></div></div>`;
+  let moved = false;
+  productRows($("#rows"), rows, () => { moved = true; onMove?.(); });
+  m.onclick = m.oninput = null;
+  $("#back").onclick = () => { if (!moved || onMove || confirm("Leave without saving the new order?")) onDone(); };
+  $("#save").onclick = async () => {
+    const ids = rows.map((r) => r.p.id);
+    const { error } = await rpc("POST", "/api/admin/products/order", { ids });
+    if (error) return toast(error.message, true);
+    rows.forEach((r, i) => (r.p.sort = i + 1));
+    products = rows.map((r) => r.p);
+    toast("Order saved. Live on the website."); onDone(true);
+  };
+}
+
+// Which products hang in the home banner, and in what order. Returns a function that adds the choice to a draft.
+function heroProducts(m, value) {
+  m.insertAdjacentHTML("beforeend", `<div class="card"><b>Products in the banner</b>
+    <p class="muted">Tick the products to show and move them into order. The banner shows up to 8.</p>
+    <div id="rows"></div><button type="button" class="btn sm ghost" id="auto">Use automatic order (featured first)</button></div>`);
+  let changed = false, auto = false;
+  const rows = [];
+  const fill = (hero) => {
+    const shown = products.filter((p) => p.active).sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+    rows.splice(0, rows.length, ...heroOrder(shown, hero).map((p) => ({ p, on: !(hero.hidden || []).includes(p.id) })));
+    productRows($("#rows"), rows, touched, true);
+  };
+  const touched = () => { changed = true; auto = false; $("#rows").dispatchEvent(new Event("input", { bubbles: true })); };
+  fill(value);
+  $("#auto").onclick = () => { fill({}); changed = auto = true; $("#rows").dispatchEvent(new Event("input", { bubbles: true })); };
+  // Left alone, the saved choice is kept as it was, so an automatic order stays automatic.
+  return (val) => {
+    if (!changed) return val;
+    val.order = auto ? [] : rows.map((r) => r.p.id);
+    val.hidden = auto ? [] : rows.filter((r) => !r.on).map((r) => r.p.id);
+    return val;
+  };
+}
+
 /* ---------- Generic settings sections ---------- */
 function fieldHTML([path, label, type], value) {
   const id = `f_${path.replace(/\./g, "_")}`;
@@ -131,14 +195,17 @@ function sectionForm(m, key, { only, onInput, onSaved } = {}) {
   const sec = SECTIONS[key];
   const cur = settings[key] || DEFAULT_SETTINGS[key];
   const fields = only ? sec.fields.filter(([p]) => only.split(",").some((o) => p.startsWith(o))) : sec.fields;
+  let extra = (val) => val;
   const draft = () => {
     const val = JSON.parse(JSON.stringify(cur));
     m.querySelectorAll("[data-p]").forEach((el) => set(val, el.dataset.p, el.type === "checkbox" ? el.checked : el.value));
-    return val;
+    return extra(val);
   };
   m.innerHTML = `<div class="bar"><h1>${esc(sec.label)}</h1><button class="btn" id="save">Save changes</button></div>
     <div class="card">${fields.map((f) => fieldHTML(f, get(cur, f[0]))).join("")}</div>`;
   wireUploads(m);
+  m.onclick = null;
+  if (key === "hero") extra = heroProducts(m, cur);
   m.oninput = onInput ? () => onInput(draft()) : null;
   $("#save").onclick = async () => {
     const val = draft();
@@ -188,10 +255,11 @@ async function reloadCats() { cats = (await rpc("GET", "/api/categories")).data 
 /* ---------- Products ---------- */
 const newProduct = () => ({ _new: true, name: "", price: 0, images: [], sizes: ["S", "M", "L"], colors: [], in_stock: true, featured: false, active: true, description: "", details: "", category_id: cats[0]?.id || null });
 
+const coverHTML = (p) => { const u = p.images?.[0] || p.colors?.find((c) => c.images?.length)?.images[0]; return u ? thumbHTML(u, toneOf(p)) : ""; };
+
 function productList(m) {
-  const coverHTML = (p) => { const u = p.images?.[0] || p.colors?.find((c) => c.images?.length)?.images[0]; return u ? thumbHTML(u, toneOf(p)) : ""; };
   const money = (n) => `${settings.site.currency}${Number(n).toLocaleString("en-IN")}`;
-  m.innerHTML = `<div class="bar"><h1>Products</h1><button class="btn" id="add">+ Add product</button></div>
+  m.innerHTML = `<div class="bar"><h1>Products</h1><div>${products.length > 1 ? `<button class="btn ghost" id="order">⇅ Change order</button> ` : ""}<button class="btn" id="add">+ Add product</button></div></div>
     ${products.length ? `<table><tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th></th></tr>
     ${products.map((p) => `<tr><td>${coverHTML(p)}</td>
       <td>${esc(p.name)}</td><td>${esc(cats.find((c) => c.id === p.category_id)?.name || "-")}</td>
@@ -200,6 +268,7 @@ function productList(m) {
       <td><button class="btn sm ghost" data-id="${p.id}">Edit</button></td></tr>`).join("")}</table>`
       : `<div class="note">No products yet. Click <b>Add product</b> to create your first one.</div>`}`;
   $("#add").onclick = () => { editing = newProduct(); shell(); };
+  $("#order")?.addEventListener("click", () => orderForm(m));
   m.onclick = (e) => { const id = e.target.dataset.id; if (id) { editing = structuredClone(products.find((p) => p.id === id)); shell(); } };
 }
 
@@ -583,6 +652,12 @@ function visual() {
   };
   const edit = (s) => {
     if (s.edit === "newproduct") return addProduct();
+    if (s.edit === "reorder") {
+      if ((sel && sel.edit === s.edit) || !closeSheet()) return;
+      sel = s; open("Product order");
+      orderForm(body, (saved) => { if (saved) { dirty = false; closeSheet(true); refreshFrame(); } else closeSheet(); }, () => (dirty = true));
+      return;
+    }
     if (sel && sel.edit === s.edit && sel.fields === s.fields && sel.id === s.id) return;
     if (!closeSheet()) return;
     if (s.edit === "product") {

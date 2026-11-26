@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
     text: "New arrivals are here  ·  Order effortlessly on WhatsApp",
   },
   hero: {
+    display: true,
     eyebrow: "The Aylin Label",
     title: "Rooted in heritage. Designed for today.",
     subtitle: "Timeless Kashmiri craft, reimagined for the modern woman.",

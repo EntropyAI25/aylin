@@ -146,8 +146,9 @@ const card = (p) => {
 /* ---------- Pages ---------- */
 function heroHtml(products) {
   const h = S.hero;
-  // A banner photo chosen in /admin wins over the colour stage.
-  if (h.image || !products.length) return `
+  // A banner photo chosen in /admin wins over the colour stage, which can also be switched off there.
+  const list = h.display === false ? [] : heroList(products, h);
+  if (h.image || !list.length) return `
   <section class="hero ${h.image ? "has-img" : ""}"${ed("hero")} ${h.image ? `style="background-image:url('${esc(h.image)}')"` : ""}>
     <div class="wrap hero-in fade">
       <span class="eyebrow">${esc(h.eyebrow)}</span>
@@ -156,7 +157,6 @@ function heroHtml(products) {
       <a class="btn" href="${esc(h.ctaLink)}">${esc(h.ctaText)}</a>
     </div>
   </section>`;
-  const list = featuredFirst(products).slice(0, 8);
   const lines = h.title.split(/(?<=[.!?])\s+/).filter(Boolean);
   return `
   <section class="studio look" style="${lookVars(lookOf(list[0]))}"${ed("hero")}>
@@ -257,7 +257,7 @@ function shop(cats, products) {
   const cat = cats.find((c) => c.slug === params.get("cat"));
   const list = cat ? products.filter((p) => p.category_id === cat.id) : products;
   $("#app").innerHTML = `<div class="wrap">
-    <div class="page-head">${emblem}<span class="eyebrow">Myoon Zoon Collection</span><h1>${esc(cat ? cat.name : "Shop")}</h1></div>
+    <div class="page-head">${emblem}<span class="eyebrow">Myoon Zoon Collection</span><h1>${esc(cat ? cat.name : "Shop")}</h1>${EDIT && products.length > 1 ? `<button type="button" class="btn ghost" style="justify-self:center;margin:14px auto 0;display:table"${ed("reorder")}>⇅ Change order</button>` : ""}</div>
     ${list.length || EDIT ? `<div class="grid spot">${list.map(card).join("")}${EDIT ? `<div class="card"${ed("newproduct")} style="align-self:start;aspect-ratio:3/4;border:2px dashed #b5838a;border-radius:6px;display:grid;place-items:center;text-align:center;color:#b5838a;font-size:20px;cursor:pointer">＋ Add product</div>` : ""}</div>` : `<p class="empty">Nothing here yet. Check back soon.</p>`}
     <div style="height:80px"></div></div>`;
   document.title = `${cat ? cat.name : "Shop"} · ${S.site.name}`;
