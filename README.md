@@ -1,7 +1,7 @@
 # AYLIN website
 
 Static site (no build step) + Supabase for products, content, images and admin login.
-`main` is the live site; new changes are tried on the `site-build` branch.
+`main` is the "coming soon" placeholder; this work lives on the `site-build` branch.
 
 ## Pages
 `index.html` home · `shop.html` · `product.html?slug=…` · `about.html` · `contact.html` · `policies.html?p=shipping|returns|size-guide` · `admin/` (admin panel) · `coming-soon.html` (copy of the placeholder)
@@ -20,6 +20,5 @@ No code changes are needed for new products.
 ## Preview / launch
 - Theme preview: add `?theme=midnight` or `?theme=luxe` to any URL, or use the switch bottom-left.
   Choose the final theme in Admin → Appearance & brand, then set `SHOW_THEME_TOGGLE: false` in `js/config.js`.
-- Hosting is Cloudflare Pages. A push to `site-build` updates the preview at `https://site-build.aylin-a3v.pages.dev` only.
-- Go live: merge `site-build` into `main`. That updates `theaylinlabel.in`, `www` and `demo.theaylinlabel.in`.
-- The preview and the live site share one D1 database, so admin edits on either one show on both.
+- Vercel: every push to `site-build` gets its own preview URL automatically, without touching the live placeholder.
+- Launch: merge `site-build` into `main`. The custom domain (`theaylinlabel.in`, bought on GoDaddy) is already connected in Vercel → Settings → Domains, with DNS records set in GoDaddy.

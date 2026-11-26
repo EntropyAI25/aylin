@@ -15,8 +15,6 @@ const SECTIONS = {
   announcement: { label: "Announcement bar", fields: [["enabled", "Show the bar", "toggle"], ["text", "Text", "text"]] },
   values: { label: "Homepage highlights", fields: [0, 1, 2].flatMap((i) => [
     [`items.${i}.title`, `Highlight ${i + 1} title`, "text"], [`items.${i}.text`, `Highlight ${i + 1} text`, "textarea"]]) },
-  journey: { label: "Homepage timeline", fields: [0, 1, 2, 3].flatMap((i) => [
-    [`items.${i}.mark`, `Step ${i + 1} big word (e.g. 120+)`, "text"], [`items.${i}.title`, `Step ${i + 1} title`, "text"], [`items.${i}.text`, `Step ${i + 1} text`, "textarea"]]) },
   story: { label: "Homepage story", fields: [["title", "Title", "text"], ["text", "Text", "textarea"], ["image", "Image", "image"]] },
   about: { label: "About page", fields: [["title", "Title", "text"], ["body", "Body (blank line = new paragraph)", "textarea"], ["image", "Image", "image"]] },
   whatsapp: { label: "WhatsApp", fields: [
