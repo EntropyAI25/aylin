@@ -14,7 +14,7 @@ const TONES = {
 const ART = (() => {
   const art = {};
   const add = (file, tone, photos) => ["front", "detail", "side", "back"].forEach((view, i) => {
-    const src = view === "detail" ? `/assets/detail/${file}.webp?v=3` : `/assets/cut/${file}-${view}.webp?v=2`;
+    const src = view === "detail" ? `/assets/detail/${file}.webp?v=4` : `/assets/cut/${file}-${view}.webp?v=3`;
     art[`/media/${photos[i]}`] = { src, view, cut: true, tone: TONES[tone] };
   });
   // photos in their original order: cover, close-up, side, back
